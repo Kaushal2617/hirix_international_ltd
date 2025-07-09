@@ -1,0 +1,16 @@
+.rotating-circle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rotating-circle-svg {
+  animation: rotate 8s linear infinite;
+  /* Adjust duration for speed */
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+} 
