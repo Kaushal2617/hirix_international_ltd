@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import express, { Application } from 'express';
+import cors from 'cors';
 import productRoutes from './routes/productRoutes';
 import userRoutes from './routes/userRoutes';
 import cartItemRoutes from './routes/cartItemRoutes';
@@ -12,7 +13,14 @@ import bannerRoutes from './routes/bannerRoutes';
 
 const app: Application = express();
 
-app.use(express.json());
+app.use(cors({
+  origin: [
+    'http://localhost:8080',
+    'https://96a509c4ca60.ngrok-free.app'
+  ],
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);

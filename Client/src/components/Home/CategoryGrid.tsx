@@ -46,8 +46,10 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories = [] }) => {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const handleCategoryClick = (link: string) => {
-    if (link) navigate(link)
+  const handleCategoryClick = (category: any) => {
+    // Use backend link if available, otherwise generate from slug
+    const link = category.link || `/category/${category.slug}`;
+    navigate(link);
   }
 
   // Desktop hover handlers
@@ -126,12 +128,12 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories = [] }) => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className="group relative bg-white rounded-2xl overflow-hidden shadow-md active:shadow-2xl transition-all duration-300 cursor-pointer flex-shrink-0"
                   style={{ height: "260px", width: "220px" }}
-                  onClick={() => handleCategoryClick(category.link)}
+                  onClick={() => handleCategoryClick(category)}
                   role="button"
                   tabIndex={0}
                   aria-label={`Shop ${category.name}`}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") handleCategoryClick(category.link)
+                    if (e.key === "Enter" || e.key === " ") handleCategoryClick(category);
                   }}
                 >
                   <div className="relative h-3/5 overflow-hidden">
@@ -146,7 +148,17 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories = [] }) => {
                   <div className="absolute bottom-0 left-0 right-0 p-5 text-black z-10">
                     <h3 className="text-lg font-bold mb-1">{category.name}</h3>
                     <p className="text-xs mb-3">{category.items} items</p>
-                    <span className="inline-flex items-center text-xs font-medium bg-white/90 text-red-600 rounded-full px-4 py-1 shadow group-active:bg-red-500 group-active:text-white transition-colors">
+                    <span
+                      className="inline-flex items-center text-xs font-medium bg-white/90 text-red-600 rounded-full px-4 py-1 shadow group-active:bg-red-500 group-active:text-white transition-colors"
+                      onClick={() => handleCategoryClick(category)}
+                      style={{ cursor: "pointer" }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Shop ${category.name}`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") handleCategoryClick(category);
+                      }}
+                    >
                       Shop Now
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </span>
@@ -210,12 +222,12 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories = [] }) => {
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:ring-2 hover:ring-red-200 transition-all duration-300 cursor-pointer"
                 style={{ height: "260px", width: "100%", maxWidth: "300px", minWidth: "220px" }}
-                onClick={() => handleCategoryClick(category.link)}
+                onClick={() => handleCategoryClick(category)}
                 role="button"
                 tabIndex={0}
                 aria-label={`Shop ${category.name}`}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") handleCategoryClick(category.link)
+                  if (e.key === "Enter" || e.key === " ") handleCategoryClick(category);
                 }}
               >
                 <div className="relative h-3/5 overflow-hidden">
@@ -230,7 +242,17 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories = [] }) => {
                 <div className="absolute bottom-0 left-0 right-0 p-5 text-black z-10">
                   <h3 className="text-lg font-bold mb-1">{category.name}</h3>
                   <p className="text-xs mb-3">{category.items} items</p>
-                  <span className="inline-flex items-center text-xs font-medium bg-white/90 text-red-600 rounded-full px-4 py-1 shadow group-hover:bg-red-500 group-hover:text-white transition-colors">
+                  <span
+                    className="inline-flex items-center text-xs font-medium bg-white/90 text-red-600 rounded-full px-4 py-1 shadow group-hover:bg-red-500 group-hover:text-white transition-colors"
+                    onClick={() => handleCategoryClick(category)}
+                    style={{ cursor: "pointer" }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Shop ${category.name}`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleCategoryClick(category);
+                    }}
+                  >
                     Shop Now
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </span>

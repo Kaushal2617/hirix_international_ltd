@@ -7,31 +7,26 @@ import { toast } from "@/hooks/use-toast";
 import CustomerDetailsModal from "../components/customers/CustomerDetailsModal";
 import EmailCustomerModal from "../components/customers/EmailCustomerModal";
 import { Tabs, Tab } from "@/components/ui/tabs";
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUsers } from '@/store/usersSlice';
+import { useEffect } from 'react';
 
 const AdminCustomers = () => {
-  // Mock customer data
-  const customers = [
-    { id: 1, name: "John Smith", email: "john.smith@example.com", orders: 5, totalSpent: "£764.35", lastOrder: "12 May 2025" },
-    { id: 2, name: "Sarah Johnson", email: "sarah.j@example.com", orders: 3, totalSpent: "£289.99", lastOrder: "10 May 2025" },
-    { id: 3, name: "Michael Brown", email: "m.brown@example.com", orders: 7, totalSpent: "£1,217.50", lastOrder: "09 May 2025" },
-    { id: 4, name: "Emma Wilson", email: "emma.w@example.com", orders: 2, totalSpent: "£124.99", lastOrder: "07 May 2025" },
-    { id: 5, name: "David Garcia", email: "d.garcia@example.com", orders: 4, totalSpent: "£532.25", lastOrder: "05 May 2025" },
-  ];
-
-  // Mock all users data (some with 0 orders)
-  const allUsers = [
-    ...customers,
-    { id: 6, name: "Priya Patel", email: "priya.patel@example.com", orders: 0, totalSpent: "£0.00", lastOrder: "-" },
-    { id: 7, name: "Alex Kim", email: "alex.kim@example.com", orders: 0, totalSpent: "£0.00", lastOrder: "-" },
-  ];
-  const purchasingCustomers = allUsers.filter(user => user.orders > 0);
-  const registeredOnlyCustomers = allUsers.filter(user => user.orders === 0);
+  const dispatch = useDispatch();
+  const { users, loading, error } = useSelector((state: any) => state.users);
   const [activeTab, setActiveTab] = useState<'purchasing' | 'registered'>('purchasing');
-
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailCustomer, setEmailCustomer] = useState<any>(null);
+
+  useEffect(() => {
+    dispatch(fetchUsers() as any);
+  }, [dispatch]);
+
+  // Example: users with orders > 0 are purchasing customers, others are registered only
+  const purchasingCustomers = users.filter((user: any) => user.orders && user.orders > 0);
+  const registeredOnlyCustomers = users.filter((user: any) => !user.orders || user.orders === 0);
 
   const handleViewCustomer = (customer: any) => {
     setSelectedCustomer(customer);

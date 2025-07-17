@@ -10,161 +10,28 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, parse } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchOrders, updateOrder, deleteOrder } from '@/store/ordersSlice';
+import { useEffect } from 'react';
 
 const AdminOrders = () => {
-  // Mock orders data - will be replaced with API calls when connecting to backend
-  const orders = [
-    { 
-      id: "#ORD-7895", 
-      customer: "John Smith", 
-      email: "john.smith@example.com",
-      mobile: "+1 555-123-4567",
-      address: "123 Main St, New York, NY 10001",
-      date: "12 May 2025", 
-      orderDate: "12 May 2025",
-      updatedDate: "12 May 2025",
-      items: 3,
-      total: "£345.00",
-      products: [
-        { name: "Modern Coffee Table", quantity: 1, price: "£149.99" },
-        { name: "Decorative Pillow", quantity: 2, price: "£29.99" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-    { 
-      id: "#ORD-7894", 
-      customer: "Sarah Johnson", 
-      email: "sarah.j@example.com",
-      mobile: "+1 555-234-5678",
-      address: "456 Park Ave, Boston, MA 02108",
-      date: "11 May 2025", 
-      orderDate: "11 May 2025",
-      updatedDate: "11 May 2025",
-      items: 2,
-      total: "£189.00",
-      products: [
-        { name: "Bookshelf", quantity: 1, price: "£189.00" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-    { 
-      id: "#ORD-7893", 
-      customer: "Michael Brown", 
-      email: "m.brown@example.com",
-      mobile: "+1 555-345-6789",
-      address: "789 Oak St, Chicago, IL 60601",
-      date: "10 May 2025", 
-      orderDate: "10 May 2025",
-      updatedDate: "10 May 2025",
-      items: 5,
-      total: "£278.50",
-      products: [
-        { name: "Dining Chair", quantity: 2, price: "£87.50" },
-        { name: "Area Rug", quantity: 1, price: "£124.99" },
-        { name: "Wall Clock", quantity: 2, price: "£39.75" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-    { 
-      id: "#ORD-7892", 
-      customer: "Emma Wilson", 
-      email: "emma.wilson@example.com",
-      mobile: "+1 555-456-7890",
-      address: "101 Pine St, Seattle, WA 98101",
-      date: "10 May 2025", 
-      orderDate: "10 May 2025",
-      updatedDate: "10 May 2025",
-      items: 1,
-      total: "£124.99",
-      products: [
-        { name: "Table Lamp", quantity: 1, price: "£124.99" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-    { 
-      id: "#ORD-7891", 
-      customer: "David Garcia", 
-      email: "d.garcia@example.com",
-      mobile: "+1 555-567-8901",
-      address: "202 Maple Ave, Austin, TX 78701",
-      date: "09 May 2025", 
-      orderDate: "09 May 2025",
-      updatedDate: "09 May 2025",
-      items: 4,
-      total: "£432.25",
-      products: [
-        { name: "Sofa", quantity: 1, price: "£349.99" },
-        { name: "Coffee Table", quantity: 1, price: "£82.26" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-    { 
-      id: "#ORD-7890", 
-      customer: "Lisa Chen", 
-      email: "lisa.chen@example.com",
-      mobile: "+1 555-678-9012",
-      address: "303 Cedar Blvd, San Francisco, CA 94107",
-      date: "08 May 2025", 
-      orderDate: "08 May 2025",
-      updatedDate: "08 May 2025",
-      items: 2,
-      total: "£187.50",
-      products: [
-        { name: "Nightstand", quantity: 2, price: "£93.75" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-    { 
-      id: "#ORD-7889", 
-      customer: "Robert Wilson", 
-      email: "r.wilson@example.com",
-      mobile: "+1 555-789-0123",
-      address: "404 Birch St, Miami, FL 33101",
-      date: "07 May 2025", 
-      orderDate: "07 May 2025",
-      updatedDate: "07 May 2025",
-      items: 3,
-      total: "£245.00",
-      products: [
-        { name: "Floor Lamp", quantity: 1, price: "£89.99" },
-        { name: "Throw Blanket", quantity: 2, price: "£77.50" },
-      ],
-      refunded: false,
-      replaced: false,
-      isCopy: false,
-      history: [],
-    },
-  ];
-
+  const dispatch = useDispatch();
+  const { orders, loading, error } = useSelector((state: any) => state.orders);
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to?: Date | undefined }>({ from: undefined, to: undefined });
   const [tempDateRange, setTempDateRange] = useState<{ from: Date | undefined; to?: Date | undefined }>({ from: undefined, to: undefined });
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [ordersState, setOrdersState] = useState(orders);
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'refund' | 'replace'; order: any } | null>(null);
+
+  useEffect(() => {
+    dispatch(fetchOrders() as any); // Fetch all orders for admin
+  }, [dispatch]);
 
   // Helper function to parse total amount for sorting
   const parseTotal = (total: string): number => {
+    if (!total) return 0;
     return parseFloat(total.replace('£', ''));
   };
 
@@ -174,19 +41,19 @@ const AdminOrders = () => {
   };
 
   // Filter and sort orders
-  const filteredAndSortedOrders = ordersState
+  const filteredAndSortedOrders = orders
     .filter(order => {
       // Date range filter
-      if (dateRange && dateRange.from && dateRange.to) {
-        const orderDate = parse(order.date, 'dd MMM yyyy', new Date());
+      if (dateRange && dateRange.from && dateRange.to && order.date) {
+        const orderDate = parseDate(order.date);
         if (orderDate < dateRange.from || orderDate > dateRange.to) return false;
       }
       // Search filter
       const searchMatch = searchTerm === "" || 
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
+        (order._id && order._id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.userId && order.userId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.shippingAddress?.name && order.shippingAddress.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.shippingAddress?.street && order.shippingAddress.street.toLowerCase().includes(searchTerm.toLowerCase()));
       return searchMatch;
     })
     .sort((a, b) => {
@@ -205,21 +72,21 @@ const AdminOrders = () => {
 
   const exportToExcel = () => {
     // Create a CSV string from orders data
-    let csvContent = "Order ID,Customer Name,Email,Mobile,Address,Date,Items,Total\n";
+    let csvContent = "Order ID,Customer Name,Street,City,State,Zip,Country,Date,Items,Total\n";
     
     filteredAndSortedOrders.forEach(order => {
-      csvContent += `${order.id},${order.customer},"${order.email}","${order.mobile}","${order.address}",${order.date},${order.items},${order.total}\n`;
+      csvContent += `${order._id},${order.shippingAddress?.name || order.userId},"${order.shippingAddress?.street}","${order.shippingAddress?.city}","${order.shippingAddress?.state}","${order.shippingAddress?.zip}","${order.shippingAddress?.country}",${order.date},${order.items?.length || 0},${order.total}\n`;
     });
     
     // Create a detailed CSV that includes product information
-    let detailedCSV = "Order ID,Customer Name,Email,Mobile,Address,Date,Total\n";
+    let detailedCSV = "Order ID,Customer Name,Street,City,State,Zip,Country,Date,Total\n";
     
     filteredAndSortedOrders.forEach(order => {
-      detailedCSV += `${order.id},${order.customer},"${order.email}","${order.mobile}","${order.address}",${order.date},${order.total}\n`;
+      detailedCSV += `${order._id},${order.shippingAddress?.name || order.userId},"${order.shippingAddress?.street}","${order.shippingAddress?.city}","${order.shippingAddress?.state}","${order.shippingAddress?.zip}","${order.shippingAddress?.country}",${order.date},${order.total}\n`;
       detailedCSV += "Product,Quantity,Price\n";
       
-      if (order.products && order.products.length) {
-        order.products.forEach(product => {
+      if (order.items && order.items.length) {
+        order.items.forEach(product => {
           detailedCSV += `"${product.name}",${product.quantity},${product.price}\n`;
         });
       }
@@ -267,32 +134,51 @@ const AdminOrders = () => {
   };
 
   // Handle refund
-  const handleRefund = (orderId: string) => {
-    setOrdersState(prev => prev.map(order =>
-      order.id === orderId ? { ...order, refunded: true, refundDate: getTodayString(), updatedDate: getTodayString() } : order
-    ));
+  const handleRefund = async (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId || o._id === orderId);
+    if (!order) return;
+    try {
+      await dispatch(updateOrder({ id: order._id || order.id, updates: {
+        refunded: true,
+        refundDate: getTodayString(),
+        updatedDate: getTodayString(),
+      } }) as any).unwrap();
+      toast({ title: 'Order Refunded', description: 'Order has been marked as refunded.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to refund order', variant: 'destructive' });
+    }
   };
 
   // Handle replace
-  const handleReplace = (orderId: string) => {
-    const original = ordersState.find(order => order.id === orderId);
-    if (!original) return;
-    const todayStr = getTodayString();
-    // Mark original as replaced
-    setOrdersState(prev => prev.map(order =>
-      order.id === orderId ? { ...order, replaced: true, replaceDate: todayStr, updatedDate: todayStr } : order
-    ));
-    // Add new copy order with '-' instead of '/'
-    const copyId = `${original.id}-copy`;
-    setOrdersState(prev => [
-      ...prev,
-      { ...original, id: copyId, replaced: false, refunded: false, isCopy: true, date: todayStr, orderDate: todayStr, updatedDate: todayStr, originalId: original.id, history: [
-        ...(original.history || []),
-        { type: 'replaced', date: todayStr, from: original.id, to: copyId }
-      ] }
-    ]);
+  const handleReplace = async (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId || o._id === orderId);
+    if (!order) return;
+    try {
+      await dispatch(updateOrder({ id: order._id || order.id, updates: {
+        replaced: true,
+        replaceDate: getTodayString(),
+        updatedDate: getTodayString(),
+      } }) as any).unwrap();
+      toast({ title: 'Order Replaced', description: 'Order has been marked as replaced.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to replace order', variant: 'destructive' });
+    }
   };
 
+  // Handle delete
+  const handleDelete = async (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId || o._id === orderId);
+    if (!order) return;
+    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    try {
+      await dispatch(deleteOrder(order._id || order.id) as any).unwrap();
+      toast({ title: 'Order Deleted', description: 'Order has been deleted.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to delete order', variant: 'destructive' });
+    }
+  };
+
+  // For edit, you can open a modal and dispatch updateOrder with new data as needed
   // For order details modal, pass order history and customer history
   const getOrderHistory = (order) => {
     const history = [];
@@ -307,7 +193,18 @@ const AdminOrders = () => {
     }
     return history;
   };
-  const getCustomerOrders = (customer) => ordersState.filter(o => o.customer === customer);
+  const getCustomerOrders = (customer) => orders.filter(o => o.customer === customer);
+
+  // Debug logs for Redux state and key variables
+  console.log('Orders page - orders:', orders);
+  console.log('Orders page - loading:', loading);
+  console.log('Orders page - error:', error);
+  console.log('Orders page - filteredAndSortedOrders:', filteredAndSortedOrders);
+
+  // Add loading/error/empty state UI before rendering the table
+  if (loading) return <div className="p-8 text-center text-lg">Loading orders...</div>;
+  if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
+  if (!orders || orders.length === 0) return <div className="p-8 text-center text-gray-500">No orders found.</div>;
 
   return (
     <div className="space-y-6">
@@ -399,44 +296,57 @@ const AdminOrders = () => {
               <TableHead>Date</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Products</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{order.customer}</div>
-                    <div className="text-sm text-gray-500">{order.email}</div>
-                  </div>
-                </TableCell>
-                <TableCell>{order.date}</TableCell>
-                <TableCell>{order.items}</TableCell>
-                <TableCell>{order.total}</TableCell>
-                <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => handleViewOrder(order)}>
-                    <Eye className="w-4 h-4 mr-1" />
-                    View
-                  </Button>
-                  {order.refunded ? (
-                    <span className="ml-2 px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-semibold">Refunded</span>
-                  ) : (
-                    <Button variant="outline" size="sm" className="ml-2" onClick={() => setConfirmDialog({ type: 'refund', order })} disabled={order.refunded}>
-                      Refund
+            {filteredAndSortedOrders.map((order, idx) => {
+              console.log('Rendering order row:', order);
+              return (
+                <TableRow key={order.id || order._id || idx}>
+                  <TableCell className="font-medium">{order._id}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{order.shippingAddress?.name || order.userId}</div>
+                      <div className="text-sm text-gray-500">{order.shippingAddress?.street}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{order.date}</TableCell>
+                  <TableCell>{order.items?.length || 0}</TableCell>
+                  <TableCell>{order.total}</TableCell>
+                  <TableCell>
+                    {order.items && Array.isArray(order.items)
+                      ? order.items.map((p, pidx) => (
+                          <div key={p.id || pidx}>
+                            {p.name} (x{p.quantity})
+                          </div>
+                        ))
+                      : '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" onClick={() => handleViewOrder(order)}>
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
                     </Button>
-                  )}
-                  {order.replaced ? (
-                    <span className="ml-2 px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold">Replaced</span>
-                  ) : (
-                    <Button variant="outline" size="sm" className="ml-2" onClick={() => setConfirmDialog({ type: 'replace', order })} disabled={order.replaced}>
-                      Replace
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+                    {order.refunded ? (
+                      <span className="ml-2 px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-semibold">Refunded</span>
+                    ) : (
+                      <Button variant="outline" size="sm" className="ml-2" onClick={() => setConfirmDialog({ type: 'refund', order })} disabled={order.refunded}>
+                        Refund
+                      </Button>
+                    )}
+                    {order.replaced ? (
+                      <span className="ml-2 px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold">Replaced</span>
+                    ) : (
+                      <Button variant="outline" size="sm" className="ml-2" onClick={() => setConfirmDialog({ type: 'replace', order })} disabled={order.replaced}>
+                        Replace
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

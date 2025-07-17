@@ -2,17 +2,63 @@ import React, { useState } from "react";
 import { banners as initialBanners, Banner } from "@/data/banners";
 import { allProducts } from "@/data/products";
 import { Button } from "@/components/ui/button";
-import { ImageUploader } from "../components/products/ImageUploader";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchBanners, addBanner } from '@/store/bannerSlice';
+import { useEffect } from 'react';
+
+const BannerImageUploader = ({ onUpload }) => {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const token = useSelector((state) => state.auth.token);
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('http://localhost:5000/api/banners/upload-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Image upload failed');
+      }
+      const data = await response.json();
+      onUpload(data.url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+      {uploading && <p>Uploading...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+    </div>
+  );
+};
 
 const categories = Array.from(new Set(allProducts.map(p => p.category)));
 
 const AdminBanners: React.FC = () => {
-  const [banners, setBanners] = useState<Banner[]>(initialBanners);
+  const dispatch = useDispatch();
+  const { banners, loading, error } = useSelector((state: any) => state.banners);
   const [tab, setTab] = useState<'hero' | 'mini'>('hero');
   // Shared dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -27,6 +73,10 @@ const AdminBanners: React.FC = () => {
   const [miniTitle, setMiniTitle] = useState("");
   const [miniLink, setMiniLink] = useState("/best-sellers");
 
+  useEffect(() => {
+    dispatch(fetchBanners() as any);
+  }, [dispatch]);
+
   const resetForm = () => {
     setHeroImageUrl("");
     setHeroMobileImageUrl("");
@@ -38,63 +88,39 @@ const AdminBanners: React.FC = () => {
     setEditBanner(null);
   };
 
-  // Add or edit hero banner
-  const handleAddOrEditHero = () => {
+  // Add hero banner (no edit for now)
+  const handleAddOrEditHero = async () => {
     if (!heroImageUrl || !heroCategory) {
       toast({ title: "Missing fields", description: "Please select an image and category.", variant: "destructive" });
       return;
     }
-    if (editBanner) {
-      setBanners(banners.map(b => b.id === editBanner.id ? { ...editBanner, imageUrl: heroImageUrl, mobileImageUrl: heroMobileImageUrl, category: heroCategory } : b));
-      toast({ title: "Banner updated", description: "Hero banner has been updated." });
-    } else {
-      setBanners([...banners, { id: Math.random().toString(36).slice(2, 9), imageUrl: heroImageUrl, mobileImageUrl: heroMobileImageUrl, category: heroCategory, type: 'hero' }]);
+    try {
+      await dispatch(addBanner({ imageUrl: heroImageUrl, mobileImageUrl: heroMobileImageUrl, category: heroCategory, type: 'hero' }) as any).unwrap();
       toast({ title: "Banner added", description: "New hero banner has been added." });
+      setDialogOpen(false);
+      resetForm();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || 'Failed to add banner', variant: 'destructive' });
     }
-    setDialogOpen(false);
-    resetForm();
   };
 
-  // Add or edit mini banner
-  const handleAddOrEditMini = () => {
+  // Add mini banner (no edit for now)
+  const handleAddOrEditMini = async () => {
     if (!miniImageUrl) {
       toast({ title: "Missing fields", description: "Please select an image.", variant: "destructive" });
       return;
     }
-    if (editBanner) {
-      setBanners(banners.map(b => b.id === editBanner.id ? { ...editBanner, imageUrl: miniImageUrl, mobileImageUrl: miniMobileImageUrl, title: miniTitle, link: miniLink } : b));
-      toast({ title: "Banner updated", description: "Mini banner has been updated." });
-    } else {
-      setBanners([...banners, { id: Math.random().toString(36).slice(2, 9), imageUrl: miniImageUrl, mobileImageUrl: miniMobileImageUrl, title: miniTitle, link: miniLink, type: 'mini' }]);
+    try {
+      await dispatch(addBanner({ imageUrl: miniImageUrl, mobileImageUrl: miniMobileImageUrl, title: miniTitle, link: miniLink, type: 'mini' }) as any).unwrap();
       toast({ title: "Banner added", description: "New mini banner has been added." });
+      setDialogOpen(false);
+      resetForm();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || 'Failed to add banner', variant: 'destructive' });
     }
-    setDialogOpen(false);
-    resetForm();
   };
 
-  // Edit handlers
-  const handleEditClick = (banner: Banner) => {
-    setEditBanner(banner);
-    if (banner.type === 'hero') {
-      setHeroImageUrl(banner.imageUrl);
-      setHeroMobileImageUrl(banner.mobileImageUrl || "");
-      setHeroCategory(banner.category || "");
-      setTab('hero');
-    } else {
-      setMiniImageUrl(banner.imageUrl);
-      setMiniMobileImageUrl(banner.mobileImageUrl || "");
-      setMiniTitle(banner.title || "");
-      setMiniLink(banner.link || "/best-sellers");
-      setTab('mini');
-    }
-    setDialogOpen(true);
-  };
-
-  // Delete handler
-  const handleDeleteClick = (id: string) => {
-    setBanners(banners.filter(b => b.id !== id));
-    toast({ title: "Banner deleted", description: "Banner has been removed." });
-  };
+  // Edit and delete handlers can be implemented similarly using backend endpoints if needed
 
   return (
     <div className="max-w-4xl mx-auto py-10">
@@ -187,24 +213,14 @@ const AdminBanners: React.FC = () => {
               <>
                 <div className="mb-4">
                   <Label>Banner Image (Desktop) *</Label>
-                  <ImageUploader
-                    onMainImageUpload={url => setHeroImageUrl(url)}
-                    mainImagePreview={heroImageUrl}
-                    onRemoveMainImage={() => setHeroImageUrl("")}
-                    additionalImagePreviews={[]}
-                    onAdditionalImagesUpload={() => {}}
-                    onRemoveAdditionalImage={() => {}}
+                  <BannerImageUploader
+                    onUpload={url => setHeroImageUrl(url)}
                   />
                 </div>
                 <div className="mb-4">
                   <Label>Banner Image (Mobile)</Label>
-                  <ImageUploader
-                    onMainImageUpload={url => setHeroMobileImageUrl(url)}
-                    mainImagePreview={heroMobileImageUrl}
-                    onRemoveMainImage={() => setHeroMobileImageUrl("")}
-                    additionalImagePreviews={[]}
-                    onAdditionalImagesUpload={() => {}}
-                    onRemoveAdditionalImage={() => {}}
+                  <BannerImageUploader
+                    onUpload={url => setHeroMobileImageUrl(url)}
                   />
                   <p className="text-xs text-gray-500">Optional. If not provided, desktop image will be used on mobile.</p>
                 </div>
@@ -226,24 +242,14 @@ const AdminBanners: React.FC = () => {
               <>
                 <div className="mb-4">
                   <Label>Mini Banner Image (Desktop) *</Label>
-                  <ImageUploader
-                    onMainImageUpload={url => setMiniImageUrl(url)}
-                    mainImagePreview={miniImageUrl}
-                    onRemoveMainImage={() => setMiniImageUrl("")}
-                    additionalImagePreviews={[]}
-                    onAdditionalImagesUpload={() => {}}
-                    onRemoveAdditionalImage={() => {}}
+                  <BannerImageUploader
+                    onUpload={url => setMiniImageUrl(url)}
                   />
                 </div>
                 <div className="mb-4">
                   <Label>Mini Banner Image (Mobile)</Label>
-                  <ImageUploader
-                    onMainImageUpload={url => setMiniMobileImageUrl(url)}
-                    mainImagePreview={miniMobileImageUrl}
-                    onRemoveMainImage={() => setMiniMobileImageUrl("")}
-                    additionalImagePreviews={[]}
-                    onAdditionalImagesUpload={() => {}}
-                    onRemoveAdditionalImage={() => {}}
+                  <BannerImageUploader
+                    onUpload={url => setMiniMobileImageUrl(url)}
                   />
                   <p className="text-xs text-gray-500">Optional. If not provided, desktop image will be used on mobile.</p>
                 </div>

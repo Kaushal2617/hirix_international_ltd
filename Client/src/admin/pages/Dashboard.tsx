@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ShoppingBag, Users, PoundSterling, Package } from 'lucide-react';
 import StatCard from '../components/dashboard/StatCard';
 import { allProducts } from '@/data/products';
@@ -6,14 +6,28 @@ import { motion } from 'framer-motion';
 import SalesChart from '../components/dashboard/SalesChart';
 import CategoryChart from '../components/dashboard/CategoryChart';
 import RecentOrdersTable from '../components/dashboard/RecentOrdersTable';
-
-// Mock data for now, will be replaced with API calls
-const totalProducts = allProducts.length;
-const totalOrders = 245; // Mock data
-const totalCustomers = 120; // Mock data
-const totalRevenue = 54230; // Mock data
+import { useDispatch, useSelector } from "react-redux";
+import { fetchOrders } from "../../store/ordersSlice";
+import { fetchUsers } from "../../store/usersSlice";
+import { fetchProducts } from "../../store/productSlice";
 
 const Dashboard = () => {
+  const dispatch = useDispatch();
+  const orders = useSelector((state: any) => state.orders.orders);
+  const users = useSelector((state: any) => state.users.users);
+  const products = useSelector((state: any) => state.products.products);
+
+  useEffect(() => {
+    dispatch(fetchOrders() as any);
+    dispatch(fetchUsers() as any);
+    dispatch(fetchProducts() as any);
+  }, [dispatch]);
+
+  const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+  const totalOrders = orders.length;
+  const totalCustomers = users.length;
+  const totalProducts = products.length;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,28 +41,28 @@ const Dashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
-          value={`£${(totalRevenue / 1000).toFixed(1)}k`}
+          value={`$${totalRevenue.toLocaleString()}`}
           icon={<PoundSterling className="h-5 w-5 text-white" />}
           linkTo="/admin/revenue"
           color="#10B981"
         />
         <StatCard
           title="Total Orders"
-          value={`+${totalOrders}`}
+          value={totalOrders}
           icon={<ShoppingBag className="h-5 w-5 text-white" />}
           linkTo="/admin/orders"
           color="#3B82F6"
         />
         <StatCard
           title="Total Products"
-          value={totalProducts.toString()}
+          value={totalProducts}
           icon={<Package className="h-5 w-5 text-white" />}
           linkTo="/admin/products"
           color="#F59E0B"
         />
         <StatCard
           title="Total Customers"
-          value={`+${totalCustomers}`}
+          value={totalCustomers}
           icon={<Users className="h-5 w-5 text-white" />}
           linkTo="/admin/customers"
           color="#EF4444"

@@ -3,6 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Package, User, MapPin, Phone, Mail } from "lucide-react";
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { fetchOrdersByUserId } from '@/store/ordersSlice';
 
 interface OrderDetailsModalProps {
   order: any;
@@ -14,7 +17,30 @@ interface OrderDetailsModalProps {
   updatedDate?: string;
 }
 
-const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, onClose, orderHistory = [], customerOrders = [], orderDate, updatedDate }) => {
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, onClose, orderHistory = [], orderDate, updatedDate }) => {
+  const dispatch = useDispatch();
+  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (isOpen && order && order.userId) {
+      setLoading(true);
+      dispatch(fetchOrdersByUserId(order.userId) as any)
+        .then((result: any) => {
+          if (result && result.payload && result.payload.orders) {
+            setCustomerOrders(result.payload.orders);
+          } else {
+            setCustomerOrders([]);
+          }
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [isOpen, order, dispatch]);
+  // Debug logs for props and key variables
+  console.log('OrderDetailsModal props:', { order, isOpen, orderHistory, orderDate, updatedDate });
+  console.log('OrderDetailsModal order:', order);
+  console.log('OrderDetailsModal order.products:', order && order.products);
+  console.log('OrderDetailsModal customerOrders:', customerOrders);
+  console.log('OrderDetailsModal loading:', loading);
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="order-details-dialog-desc">
@@ -85,14 +111,16 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, on
           {/* Customer Order History */}
           <div className="space-y-3">
             <h3 className="font-semibold">Customer Order History</h3>
-            {customerOrders.length === 0 ? (
+            {loading ? (
+              <div className="text-sm text-gray-500">Loading customer orders...</div>
+            ) : customerOrders.length === 0 ? (
               <div className="text-sm text-gray-500">No other orders for this customer.</div>
             ) : (
               <ul className="text-sm">
                 {customerOrders.map((o, i) => (
-                  <li key={o.id} className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 border-b last:border-b-0 py-1">
+                  <li key={o.id || o._id} className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 border-b last:border-b-0 py-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono">{o.id}</span>
+                      <span className="font-mono">{o.id || o._id}</span>
                       {o.refunded && <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-semibold">Refunded</span>}
                       {o.replaced && <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold">Replaced</span>}
                       {o.isCopy && <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs font-semibold">Copy</span>}
@@ -133,15 +161,19 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, on
           <div className="space-y-3">
             <h3 className="font-semibold">Products</h3>
             <div className="space-y-2">
-              {order.products && order.products.map((product: any, index: number) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{product.name}</div>
-                    <div className="text-sm text-gray-600">Qty: {product.quantity}</div>
+              {Array.isArray(order.items) && order.items.length > 0 ? (
+                order.items.map((product: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-sm text-gray-600">Qty: {product.quantity}</div>
+                    </div>
+                    <div className="font-medium">{product.price}</div>
                   </div>
-                  <div className="font-medium">{product.price}</div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-sm text-gray-500">No products found for this order.</div>
+              )}
             </div>
           </div>
         </div>

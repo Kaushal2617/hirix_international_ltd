@@ -9,10 +9,13 @@ import { Link } from 'react-router-dom';
 import { TypeAnimation } from "react-type-animation";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShoppingContext } from '@/contexts/ShoppingContext';
+import { useDispatch } from 'react-redux';
+import { logout } from '@/store/authSlice';
 
 const Navbar = ({ categories = [] }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { cartItems } = useShoppingContext();
+  const dispatch = useDispatch();
 
   let firstName = '';
   try {
@@ -159,9 +162,12 @@ const Navbar = ({ categories = [] }) => {
                 {isLoggedIn && (
                   <button
                     className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-lg text-gray-800 hover:bg-gray-100/80 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all duration-200 mt-2"
-                    onClick={() => setSidebarOpen(false)}
+                    onClick={() => {
+                      dispatch(logout());
+                      setSidebarOpen(false);
+                    }}
                   >
-                    <span className="material-icons">logout</span>
+                    {/* Only one Logout label/icon */}
                     <span className="tracking-wide">Logout</span>
                   </button>
                 )}

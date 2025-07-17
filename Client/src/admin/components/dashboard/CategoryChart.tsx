@@ -1,19 +1,25 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { allProducts } from '@/data/products';
+import { useSelector } from 'react-redux';
+import { useMemo } from 'react';
 
 const CategoryChart = () => {
-  const categoryData = allProducts.reduce((acc, product) => {
-    const category = product.category || 'Uncategorized';
-    const existingCategory = acc.find(item => item.name === category);
-    if (existingCategory) {
-      existingCategory.value += 1;
-    } else {
-      acc.push({ name: category, value: 1 });
-    }
-    return acc;
-  }, []);
+  const products = useSelector((state: any) => state.products.products);
+
+  const categoryData = useMemo(() => {
+    if (!products || !products.length) return [];
+    return products.reduce((acc: any[], product: any) => {
+      const category = product.category || 'Uncategorized';
+      const existingCategory = acc.find(item => item.name === category);
+      if (existingCategory) {
+        existingCategory.value += 1;
+      } else {
+        acc.push({ name: category, value: 1 });
+      }
+      return acc;
+    }, []);
+  }, [products]);
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#6366F1'];
 
@@ -35,7 +41,7 @@ const CategoryChart = () => {
             dataKey="value"
             nameKey="name"
           >
-            {categoryData.map((entry, index) => (
+            {categoryData.map((entry: any, index: number) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

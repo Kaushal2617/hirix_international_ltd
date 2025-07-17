@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Package, Package2 } from "lucide-react"
-import { allProducts, type Product as DataProduct } from "../../data/products"
 import { toast } from "@/hooks/use-toast"
 import { ProductTable } from "../components/products/ProductTable"
 import { SimpleAddProductForm, type SimpleProduct } from "../components/products/SimpleAddProductForm"
 import { VariantAddProductForm, type VariantProduct } from "../components/products/VariantAddProductForm"
+import { useSelector } from 'react-redux';
 
 // Unified Product interface that supports both simple and variant products
 interface UnifiedProduct {
@@ -40,6 +40,7 @@ interface UnifiedProduct {
   availableMaterials?: string[]
   availableFinishes?: string[]
   hasVariants?: boolean
+  _id?: string // Added for MongoDB _id
 }
 
 interface ProductVariant {
@@ -65,56 +66,37 @@ interface ProductVariant {
   isDefault?: boolean
 }
 
-// Convert the imported products to the unified Product interface
-const convertProducts = (dataProducts: DataProduct[]): UnifiedProduct[] => {
-  return dataProducts.map((product) => ({
-    id: product.id.toString(),
-    sku: `PRD-${product.id.toString().padStart(3, "0")}-${product.category.toUpperCase().slice(0, 3)}-${product.color.toUpperCase().slice(0, 3)}`,
-    name: product.name,
-    category: product.category,
-    price: product.price,
-    oldPrice: product.oldPrice,
-    material: product.material,
-    color: product.color,
-    image: product.image,
-    images: product.images,
-    video: product.video,
-    description: product.description,
-    details: product.details,
-    rating: product.rating,
-    reviewCount: product.reviewCount,
-    newArrival: product.newArrival || false,
-    bestSeller: false,
-    inventory: product.inventory || 0,
-    sale: false,
-    weight: product.weight || 0,
-    dimensions: product.dimensions || { length: 0, width: 0, height: 0 },
-    hasVariants: false,
-  }))
-}
+// Remove: interface DataProduct, convertProducts function, and any usage of convertProducts
 
 const AdminProducts = () => {
-  // State for products list
-  const [products, setProducts] = useState<UnifiedProduct[]>(convertProducts(allProducts))
+  const [products, setProducts] = useState<UnifiedProduct[]>([]);
+  const [simpleDialogOpen, setSimpleDialogOpen] = useState(false);
+  const [variantDialogOpen, setVariantDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const { token } = useSelector((state: any) => state.auth);
 
-  // State for dialogs
-  const [simpleDialogOpen, setSimpleDialogOpen] = useState(false)
-  const [variantDialogOpen, setVariantDialogOpen] = useState(false)
+  // Fetch products from backend on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/products', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      }
+    };
+    fetchProducts();
+  }, [token]);
 
-  // Search term state
-  const [searchTerm, setSearchTerm] = useState("")
-
-  // Filter states
-  const [categoryFilter, setCategoryFilter] = useState("")
-
-  // Categories from the products data
-  const categories = Array.from(new Set(allProducts.map((product) => product.category)))
-
-  // Materials from the products data
-  const materials = Array.from(new Set(allProducts.map((product) => product.material)))
-
-  // Colors from the products data
-  const colors = Array.from(new Set(allProducts.map((product) => product.color)))
+  // Categories, materials, colors from products
+  const categories = Array.from(new Set(products.map((product) => product.category)));
+  const materials = Array.from(new Set(products.map((product) => product.material)));
+  const colors = Array.from(new Set(products.map((product) => product.color)));
 
   // Convert simple product to unified format
   const convertSimpleProduct = (simpleProduct: SimpleProduct): UnifiedProduct => {
@@ -138,44 +120,107 @@ const AdminProducts = () => {
   }
 
   // Add simple product handler
-  const handleAddSimpleProduct = (product: SimpleProduct) => {
-    const unifiedProduct = convertSimpleProduct(product)
-    setProducts([...products, unifiedProduct])
-    toast({
-      title: "Simple Product Added! 🎉",
-      description: `${product.name} has been added to your inventory`,
-    })
-  }
+  const handleAddSimpleProduct = async (product: SimpleProduct) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(product),
+      });
+      if (!res.ok) throw new Error('Failed to add product');
+      const data = await res.json();
+      setProducts([...products, data]);
+      toast({
+        title: 'Simple Product Added! 🎉',
+        description: `${product.name} has been added to your inventory`,
+      });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
 
   // Add variant product handler
-  const handleAddVariantProduct = (product: VariantProduct) => {
-    const unifiedProduct = convertVariantProduct(product)
-    setProducts([...products, unifiedProduct])
-    toast({
-      title: "Product with Variants Added! 🚀",
-      description: `${product.name} with ${product.variants?.length || 0} variants has been added to your inventory`,
-    })
-  }
+  const handleAddVariantProduct = async (product: VariantProduct) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(product),
+      });
+      if (!res.ok) throw new Error('Failed to add product');
+      const data = await res.json();
+      setProducts([...products, data]);
+      toast({
+        title: 'Product with Variants Added! 🚀',
+        description: `${product.name} with ${product.variants?.length || 0} variants has been added to your inventory`,
+      });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
 
   // Update product handler
-  const handleUpdateProduct = (updatedProduct: UnifiedProduct) => {
-    setProducts(products.map((product) => (product.id === updatedProduct.id ? updatedProduct : product)))
-    toast({
-      title: "Product updated",
-      description: "Product has been updated successfully",
-    })
-  }
+  const handleUpdateProduct = async (updatedProduct: UnifiedProduct) => {
+    // Ensure correct id is sent (MongoDB _id)
+    const id = updatedProduct._id || updatedProduct.id;
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...updatedProduct, id: undefined, _id: undefined }), // remove id fields from body
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast({
+          title: 'Error',
+          description: errorData.error || 'Failed to update product',
+          variant: 'destructive',
+        });
+        return false; // indicate failure
+      }
+      const data = await res.json();
+      setProducts(products.map((product) => (product.id === id || product._id === id ? data : product)));
+      toast({
+        title: 'Product updated',
+        description: 'Product has been updated successfully',
+      });
+      return true; // indicate success
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      return false;
+    }
+  };
 
   // Delete product handler
-  const handleDeleteProduct = (productId: string) => {
-    const productToDelete = products.find((p) => p.id === productId)
-    setProducts(products.filter((product) => product.id !== productId))
-    toast({
-      title: "Product deleted",
-      description: `${productToDelete?.name || "Product"} has been removed from inventory`,
-      variant: "destructive",
-    })
-  }
+  const handleDeleteProduct = async (productId: string) => {
+    const productToDelete = products.find((p) => p.id === productId);
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete product');
+      setProducts(products.filter((product) => product.id !== productId));
+      toast({
+        title: 'Product deleted',
+        description: `${productToDelete?.name || 'Product'} has been removed from inventory`,
+        variant: 'destructive',
+      });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
 
   // Filter products based on search term and category
   const filteredProducts = products.filter((product) => {

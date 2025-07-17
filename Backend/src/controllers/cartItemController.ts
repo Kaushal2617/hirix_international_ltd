@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CartItem } from '../models/CartItem';
+import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const getAllCartItems = async (req: Request, res: Response) => {
   try {
@@ -56,5 +57,49 @@ export const deleteAllCartItems = async (req: Request, res: Response) => {
     res.json({ message: 'All cart items deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete all cart items' });
+  }
+};
+
+// Get all cart items for the current user
+export const getUserCart = async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    const userId = authReq.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    const cartItems = await CartItem.find({ userId });
+    res.json(cartItems);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user cart' });
+  }
+};
+
+// Replace all cart items for the current user
+export const setUserCart = async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    const userId = authReq.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    // Remove all existing cart items for user
+    await CartItem.deleteMany({ userId });
+    // Insert new cart items
+    const items = req.body.items || [];
+    if (items.length === 0) return res.json([]);
+    const cartItems = await CartItem.insertMany(items.map((item: any) => ({ ...item, userId })));
+    res.status(201).json(cartItems);
+  } catch (err) {
+    res.status(400).json({ error: 'Failed to set user cart', details: err });
+  }
+};
+
+// Clear all cart items for the current user
+export const clearUserCart = async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    const userId = authReq.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    await CartItem.deleteMany({ userId });
+    res.json({ message: 'User cart cleared' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear user cart' });
   }
 }; 

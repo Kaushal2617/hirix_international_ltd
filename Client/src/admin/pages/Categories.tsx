@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Dialog,
   DialogContent,
@@ -32,6 +32,7 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useSelector } from 'react-redux';
 
 // Define types for categories and subcategories
 interface Subcategory {
@@ -48,41 +49,51 @@ interface Category {
   subcategories: Subcategory[];
 }
 
+const CategoryImageUploader = ({ onUpload }) => {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const token = useSelector((state) => state.auth.token);
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('http://localhost:5000/api/categories/upload-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Image upload failed');
+      }
+      const data = await response.json();
+      onUpload(data.url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+      {uploading && <p>Uploading...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+    </div>
+  );
+};
+
 const AdminCategories = () => {
-  // Example data - in a real app, this would come from a database
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: "1",
-      name: "Furniture",
-      slug: "furniture",
-      subcategories: [
-        { id: "1-1", name: "Living Room", slug: "living-room" },
-        { id: "1-2", name: "Bedroom", slug: "bedroom" },
-        { id: "1-3", name: "Dining Room", slug: "dining-room" },
-        { id: "1-4", name: "Office", slug: "office" },
-      ]
-    },
-    {
-      id: "2",
-      name: "Outdoor",
-      slug: "outdoor",
-      subcategories: [
-        { id: "2-1", name: "Patio Furniture", slug: "patio-furniture" },
-        { id: "2-2", name: "Garden", slug: "garden" },
-        { id: "2-3", name: "Grills", slug: "grills" },
-      ]
-    },
-    {
-      id: "3",
-      name: "Home Decor",
-      slug: "home-decor",
-      subcategories: [
-        { id: "3-1", name: "Rugs", slug: "rugs" },
-        { id: "3-2", name: "Lighting", slug: "lighting" },
-        { id: "3-3", name: "Wall Decor", slug: "wall-decor" },
-      ]
-    },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Dialog state
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -108,6 +119,33 @@ const AdminCategories = () => {
     return Math.random().toString(36).substring(2, 9);
   };
 
+  const { token } = useSelector((state: any) => state.auth);
+
+  // Fetch categories from backend on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/categories', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error('Failed to fetch categories');
+        const data = await res.json();
+        // Ensure subcategories is always an array
+        setCategories(
+          Array.isArray(data)
+            ? data.map((cat: any) => ({ ...cat, subcategories: cat.subcategories || [] }))
+            : []
+        );
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      }
+    };
+    fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   // Open dialog to add a new category
   const handleAddCategory = () => {
     setCategoryName("");
@@ -125,58 +163,102 @@ const AdminCategories = () => {
   };
 
   // Delete a category
-  const handleDeleteCategory = (categoryId: string) => {
+  const handleDeleteCategory = async (categoryId: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this category and all its subcategories?");
-    if (confirmed) {
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/categories/${categoryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete category');
       setCategories(categories.filter(cat => cat.id !== categoryId));
       toast({
         title: "Category deleted",
         description: "The category and its subcategories have been deleted",
       });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
 
   // Save a category (create or update)
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
     if (!categoryName.trim()) {
       toast({
-        title: "Error",
-        description: "Category name cannot be empty",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Category name cannot be empty',
+        variant: 'destructive',
       });
       return;
     }
-
     const slug = generateSlug(categoryName);
-
-    if (currentCategory) {
-      // Update existing category
-      setCategories(categories.map(cat => 
-        cat.id === currentCategory.id 
-          ? { ...cat, name: categoryName, slug, image: categoryImage } 
-          : cat
-      ));
-      toast({
-        title: "Category updated",
-        description: `"${categoryName}" has been updated`,
-      });
-    } else {
-      // Create new category
-      const newCategory: Category = {
-        id: generateId(),
-        name: categoryName,
-        slug,
-        image: categoryImage,
-        subcategories: []
-      };
-      setCategories([...categories, newCategory]);
-      toast({
-        title: "Category created",
-        description: `"${categoryName}" has been created`,
-      });
+    try {
+      if (currentCategory) {
+        // Update existing category
+        const res = await fetch(`http://localhost:5000/api/categories/${currentCategory.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ...currentCategory, name: categoryName, slug, image: categoryImage }),
+        });
+        if (!res.ok) throw new Error('Failed to update category');
+        const data = await res.json();
+        setCategories(categories.map(cat => cat.id === currentCategory.id ? data : cat));
+        toast({
+          title: 'Category updated',
+          description: `"${categoryName}" has been updated`,
+        });
+      } else {
+        // Create new category
+        const newCategory = {
+          name: categoryName,
+          slug,
+          image: categoryImage,
+          link: `/category/${slug}`,
+          subcategories: [],
+        };
+        const res = await fetch('http://localhost:5000/api/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(newCategory),
+        });
+        if (!res.ok) {
+          let errorMsg = 'Failed to create category';
+          try {
+            const errorData = await res.json();
+            console.error('Backend error response:', errorData); // Log full error
+            if (errorData.details && errorData.details.code === 11000) {
+              errorMsg = 'A category with this slug already exists. Please choose a different name.';
+            } else if (errorData.details && errorData.details.message) {
+              errorMsg = errorData.details.message;
+            } else if (errorData.error) {
+              errorMsg = errorData.error;
+            }
+          } catch (e) {
+            console.error('Error parsing backend error response:', e);
+          }
+          throw new Error(errorMsg);
+        }
+        const data = await res.json();
+        // Ensure subcategories is always an array
+        setCategories([...categories, { ...data, subcategories: data.subcategories || [] }]);
+        toast({
+          title: 'Category created',
+          description: `"${categoryName}" has been created`,
+        });
+      }
+      setShowCategoryDialog(false);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
-
-    setShowCategoryDialog(false);
   };
 
   // Open dialog to add a new subcategory
@@ -420,19 +502,7 @@ const AdminCategories = () => {
             {/* Image upload */}
             <div className="space-y-2">
               <Label htmlFor="categoryImage">Category Image (for Shop by Category)</Label>
-              <Input
-                id="categoryImage"
-                type="file"
-                accept="image/*"
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = ev => setCategoryImage(ev.target?.result as string);
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
+              <CategoryImageUploader onUpload={url => setCategoryImage(url)} />
               {categoryImage && (
                 <img src={categoryImage} alt="Preview" className="mt-2 w-32 h-20 object-cover rounded border" />
               )}
