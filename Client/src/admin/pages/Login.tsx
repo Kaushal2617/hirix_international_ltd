@@ -10,6 +10,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "@/hooks/use-toast";
 import { Lock, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
+import { useDispatch } from 'react-redux';
+import { login as loginThunk } from '@/store/authSlice';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -22,6 +24,7 @@ const formSchema = z.object({
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -32,25 +35,34 @@ const AdminLogin = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    setTimeout(() => {
-      if (values.email === "admin@example.com" && values.password === "admin123") {
-        localStorage.setItem("adminAuthenticated", "true");
+    try {
+      const resultAction = await dispatch(loginThunk(values));
+      // @ts-ignore
+      if (loginThunk.fulfilled.match(resultAction)) {
         toast({
           title: "Login successful",
           description: "Welcome to the admin panel",
         });
         navigate("/admin");
       } else {
+        // @ts-ignore
+        const errorMsg = resultAction.payload || 'Invalid email or password';
         toast({
           variant: "destructive",
           title: "Authentication failed",
-          description: "Invalid email or password",
+          description: errorMsg,
         });
       }
-      setIsLoading(false);
-    }, 1000);
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Authentication failed",
+        description: err.message || "Invalid email or password",
+      });
+    }
+    setIsLoading(false);
   }
 
   return (

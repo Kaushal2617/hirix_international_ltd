@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { CreatableCombobox } from "@/components/ui/creatable-combobox"
-import { ImageUploader } from "./ImageUploader"
+import ImageUploader from "./ImageUploader"
 import { toast } from "@/hooks/use-toast"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 

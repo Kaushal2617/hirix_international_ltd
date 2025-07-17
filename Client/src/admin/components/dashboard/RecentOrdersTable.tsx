@@ -2,14 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-
-const recentOrders = [
-  { id: '#ORD-7895', customer: 'John Smith', date: '12 May 2025', amount: '£345.00' },
-  { id: '#ORD-7894', customer: 'Sarah Johnson', date: '11 May 2025', amount: '£189.00' },
-  { id: '#ORD-7893', customer: 'Michael Brown', date: '10 May 2025', amount: '£278.50' },
-  { id: '#ORD-7892', customer: 'Emma Wilson', date: '10 May 2025', amount: '£124.99' },
-  { id: '#ORD-7891', customer: 'David Garcia', date: '09 May 2025', amount: '£432.25' },
-];
+import { useSelector } from 'react-redux';
 
 const getStatusBadge = (status) => {
   switch (status) {
@@ -25,6 +18,13 @@ const getStatusBadge = (status) => {
 };
 
 const RecentOrdersTable = () => {
+  const orders = useSelector((state: any) => state.orders.orders);
+  // Sort by date descending and take the 5 most recent
+  const recentOrders = (orders || [])
+    .slice()
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -41,12 +41,12 @@ const RecentOrdersTable = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {recentOrders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">{order.id}</TableCell>
-              <TableCell>{order.customer}</TableCell>
-              <TableCell>{order.date}</TableCell>
-              <TableCell className="text-right">{order.amount}</TableCell>
+          {recentOrders.map((order: any) => (
+            <TableRow key={order._id}>
+              <TableCell className="font-medium">{order._id}</TableCell>
+              <TableCell>{order.shippingAddress?.name || order.userId}</TableCell>
+              <TableCell>{order.date ? new Date(order.date).toLocaleDateString() : ''}</TableCell>
+              <TableCell className="text-right">${order.total?.toLocaleString()}</TableCell>
             </TableRow>
           ))}
         </TableBody>

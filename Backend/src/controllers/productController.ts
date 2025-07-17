@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Product } from '../models/Product';
+import mongoose from 'mongoose';
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
@@ -42,11 +43,15 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json({ message: 'Product deleted' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete product' });
+    console.error('Delete product error:', err);
+    res.status(500).json({ error: 'Failed to delete product', details: err });
   }
 };
 

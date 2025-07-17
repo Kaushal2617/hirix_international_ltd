@@ -49,6 +49,9 @@ interface AdminProduct {
   inventory: number;
   details?: string[];
   variants?: ProductVariant[];
+  sale?: boolean;
+  bestSeller?: boolean;
+  newArrival?: boolean;
 }
 
 interface ProductTableProps {
@@ -61,6 +64,14 @@ interface ProductTableProps {
 interface UnifiedProduct extends AdminProduct {
   variants?: ProductVariant[];
 }
+
+// Helper to normalize product ID
+const normalizeProductId = (product: AdminProduct) => ({
+  ...product,
+  id: product.id || (product as any)?._id,
+});
+
+const getProductId = (product: AdminProduct) => product._id || product.id;
 
 export const ProductTable = ({ 
   products, 
@@ -86,7 +97,18 @@ export const ProductTable = ({
       setVariantManagerOpen(true);
     } else {
       setCurrentProduct(product);
-      setEditedProduct({ ...product, details: Array.isArray(product.details) ? product.details : (product.details ? [product.details] : []) });
+      setEditedProduct({
+        ...product,
+        id: product.id || (product as any)._id || "",
+        sku: product.sku || "",
+        color: product.color || "",
+        material: product.material || "",
+        sale: !!product.sale,
+        bestSeller: !!product.bestSeller,
+        newArrival: !!product.newArrival,
+        details: Array.isArray(product.details) ? product.details : (product.details ? [product.details] : []),
+        // add other fields as needed
+      });
       setEditDialogOpen(true);
     }
   };
@@ -98,7 +120,7 @@ export const ProductTable = ({
   };
 
   const handleDeleteClick = (productId: string) => {
-    const productToDelete = products.find(p => p.id === productId);
+    const productToDelete = products.find(p => getProductId(p) === productId);
     const productName = productToDelete ? productToDelete.name : 'Product';
     
     if (window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
@@ -110,7 +132,7 @@ export const ProductTable = ({
     }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editedProduct) {
       toast({
         title: "Error",
@@ -120,24 +142,44 @@ export const ProductTable = ({
       return;
     }
 
-    // Validate required fields
-    if (!editedProduct.name.trim() || !editedProduct.sku.trim() || editedProduct.price <= 0) {
+    // Specific validation for required fields
+    if (!editedProduct.name || !editedProduct.name.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields with valid values",
+        description: "Product name cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!editedProduct.sku || !editedProduct.sku.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "SKU cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (editedProduct.price === undefined || editedProduct.price <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Price must be greater than 0",
         variant: "destructive"
       });
       return;
     }
 
-    onUpdateProduct(editedProduct as AdminProduct);
-    setEditDialogOpen(false);
-    setCurrentProduct(null);
-    setEditedProduct(null);
-    toast({
-      title: "Product updated",
-      description: `${editedProduct.name} has been updated successfully`,
-    });
+    // Wait for update to succeed before closing dialog
+    const success = await onUpdateProduct(editedProduct as AdminProduct);
+    if (success) {
+      setEditDialogOpen(false);
+      setCurrentProduct(null);
+      setEditedProduct(null);
+      toast({
+        title: "Product updated",
+        description: `${editedProduct.name} has been updated successfully`,
+      });
+    }
+    // If not success, do not close dialog
   };
 
   const handleApplyDiscount = () => {
@@ -232,7 +274,7 @@ export const ProductTable = ({
           </TableHeader>
           <TableBody>
             {products.map((product) => (
-              <TableRow key={product.id}>
+              <TableRow key={getProductId(product)}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <img 
@@ -288,7 +330,7 @@ export const ProductTable = ({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleDeleteClick(product.id)}
+                      onClick={() => handleDeleteClick(getProductId(product))}
                     >
                       <Trash className="w-4 h-4" />
                     </Button>
@@ -313,8 +355,16 @@ export const ProductTable = ({
                 formData={editedProduct}
                 onChange={handleEditInputChange}
                 categories={categories}
-                materials={materials}
-                colors={colors}
+                materials={
+                  materials.includes(editedProduct.material)
+                    ? materials
+                    : [...materials, editedProduct.material]
+                }
+                colors={
+                  colors.includes(editedProduct.color)
+                    ? colors
+                    : [...colors, editedProduct.color]
+                }
               />
             </div>
           )}
@@ -389,7 +439,7 @@ export const ProductTable = ({
               onUpdateVariant={() => {}}
               onDeleteVariant={variantId => {
                 const updatedVariants = (variantProduct.variants || []).filter((v: any) => v.id !== variantId);
-                onUpdateProduct({ ...variantProduct, variants: updatedVariants });
+                onUpdateProduct(normalizeProductId({ ...variantProduct, variants: updatedVariants }));
                 setVariantProduct({ ...variantProduct, variants: updatedVariants });
               }}
               onDuplicateVariant={variantId => {
@@ -398,7 +448,8 @@ export const ProductTable = ({
                 if (variantToDuplicate) {
                   const newVariant = { ...variantToDuplicate, id: Math.random().toString(36).substring(2, 9), sku: variantToDuplicate.sku + "-COPY" };
                   const updatedVariants = [...variants, newVariant];
-                  onUpdateProduct({ ...variantProduct, variants: updatedVariants });
+                  // Ensure the product has a valid id
+                  onUpdateProduct(normalizeProductId({ ...variantProduct, variants: updatedVariants }));
                   setVariantProduct({ ...variantProduct, variants: updatedVariants });
                 }
               }}

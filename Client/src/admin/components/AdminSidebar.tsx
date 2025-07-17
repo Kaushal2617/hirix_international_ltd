@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { useDispatch } from 'react-redux';
+import { logout } from '@/store/authSlice';
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
@@ -25,18 +27,15 @@ const navItems = [
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   
   const handleLogout = () => {
-    // Clear admin authentication
-    localStorage.removeItem("adminAuthenticated");
-    
+    dispatch(logout());
     toast({
-      title: "Logged out",
-      description: "You have been logged out of the admin panel",
+      title: 'Logged out',
+      description: 'You have been logged out of the admin panel',
     });
-    
-    // Redirect to login page
-    navigate("/admin/login");
+    navigate('/admin/login');
   };
 
   return (

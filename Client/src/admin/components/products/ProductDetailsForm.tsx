@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { CreatableCombobox } from "@/components/ui/creatable-combobox";
-import { ImageUploader } from './ImageUploader';
+import ImageUploader from './ImageUploader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 

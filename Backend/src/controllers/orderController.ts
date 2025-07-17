@@ -1,9 +1,15 @@
 import { Request, Response } from 'express';
 import { Order } from '../models/Order';
+import { AuthRequest } from '../middlewares/authMiddleware';
+import mongoose from 'mongoose';
 
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
-    const orders = await Order.find();
+    const filter: any = {};
+    if (req.query.userId && req.query.userId !== 'undefined' && req.query.userId !== '') {
+      filter.userId = new mongoose.Types.ObjectId(req.query.userId as string);
+    }
+    const orders = await Order.find(filter);
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch orders' });
@@ -22,7 +28,11 @@ export const getOrderById = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const order = new Order(req.body);
+    const authReq = req as AuthRequest;
+    const order = new Order({
+      ...req.body,
+      userId: new mongoose.Types.ObjectId(authReq.user?.userId),
+    });
     await order.save();
     res.status(201).json(order);
   } catch (err) {

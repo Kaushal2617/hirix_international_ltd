@@ -13,5 +13,8 @@ router.post('/', authenticate, cartItemController.createCartItem);
 router.put('/:id', authenticate, isSelfOrAdmin, cartItemController.updateCartItem);
 router.delete('/:id', authenticate, isSelfOrAdmin, cartItemController.deleteCartItem);
 router.delete('/all', authenticate, isAdmin, cartItemController.deleteAllCartItems);
+router.get('/user', authenticate, cartItemController.getUserCart);
+router.post('/user', authenticate, cartItemController.setUserCart);
+router.delete('/user', authenticate, cartItemController.clearUserCart);
 
 export default router; 

@@ -31,6 +31,7 @@ const VariantSchema = new Schema<Variant>(
 
 export interface ProductDocument extends Document {
   name: string;
+  sku: string;
   image: string;
   images?: string[];
   video?: string;
@@ -43,6 +44,8 @@ export interface ProductDocument extends Document {
   material: string;
   description?: string;
   details?: string[];
+  sale?: boolean;
+  bestSeller?: boolean;
   newArrival?: boolean;
   inventory: number;
   weight?: number;
@@ -58,6 +61,7 @@ export interface ProductDocument extends Document {
 const ProductSchema = new Schema<ProductDocument>(
   {
     name: { type: String, required: true },
+    sku: { type: String, required: true },
     image: { type: String, required: true },
     images: [String],
     video: String,
@@ -70,7 +74,9 @@ const ProductSchema = new Schema<ProductDocument>(
     material: { type: String, required: true },
     description: String,
     details: [String],
-    newArrival: Boolean,
+    sale: { type: Boolean, default: false },
+    bestSeller: { type: Boolean, default: false },
+    newArrival: { type: Boolean, default: false },
     inventory: { type: Number, required: true },
     weight: Number,
     dimensions: {

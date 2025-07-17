@@ -10,6 +10,7 @@ import { allProducts } from "@/data/products";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { CreatableCombobox } from "@/components/ui/creatable-combobox";
+import { useSelector } from 'react-redux';
 
 const initialCategories = Array.from(new Set(allProducts.map(p => p.category)));
 const initialMaterials = Array.from(new Set(allProducts.map(p => p.material)));
@@ -17,6 +18,7 @@ const initialColors = Array.from(new Set(allProducts.map(p => p.color)));
 
 const AddProductPage = () => {
   const navigate = useNavigate();
+  const { token } = useSelector((state: any) => state.auth);
   const [materials, setMaterials] = useState(initialMaterials);
   const [colors, setColors] = useState(initialColors);
 
@@ -60,22 +62,34 @@ const AddProductPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newProduct.sku || !newProduct.name || !newProduct.category || !newProduct.price || !newProduct.material || !newProduct.color || !mainImagePreview) {
       toast({
-        title: "Missing fields",
-        description: "Please fill out all required fields including main image.",
-        variant: "destructive"
+        title: 'Missing fields',
+        description: 'Please fill out all required fields including main image.',
+        variant: 'destructive',
       });
       return;
     }
-    // Here you would call your API to add the product
-    toast({
-      title: "Product added",
-      description: `${newProduct.name} (SKU: ${newProduct.sku}) has been added successfully`,
-    });
-    navigate("/admin/products");
+    try {
+      const res = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(newProduct),
+      });
+      if (!res.ok) throw new Error('Failed to add product');
+      toast({
+        title: 'Product added',
+        description: `${newProduct.name} (SKU: ${newProduct.sku}) has been added successfully`,
+      });
+      navigate('/admin/products');
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
