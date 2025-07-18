@@ -44,6 +44,7 @@ const BestSellersBanner = () => (
 
 const BestSellersPage = () => {
   const products = useSelector((state: RootState) => state.products.products);
+  const categories = useSelector((state: RootState) => state.categories.categories);
   const bestSellerProducts = products.filter(p => p.bestSeller);
 
   // Get unique colors, materials, and categories from best sellers
@@ -111,6 +112,9 @@ const BestSellersPage = () => {
     setSelectedCategory('all');
   };
 
+  // Use backend categories for filter dropdown
+  const allCategoryNames = Array.isArray(categories) ? categories.map((cat: any) => cat.name) : [];
+
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
@@ -131,7 +135,7 @@ const BestSellersPage = () => {
                 minPrice={minPrice}
                 maxPrice={maxPrice}
                 resetFilters={resetFilters}
-                categories={allCategories}
+                categories={allCategoryNames}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
               />
@@ -158,7 +162,7 @@ const BestSellersPage = () => {
                     minPrice={minPrice}
                     maxPrice={maxPrice}
                     resetFilters={resetFilters}
-                    categories={allCategories}
+                    categories={allCategoryNames}
                     selectedCategory={selectedCategory}
                     setSelectedCategory={setSelectedCategory}
                   />

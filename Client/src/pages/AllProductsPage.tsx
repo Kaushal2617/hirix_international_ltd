@@ -10,15 +10,18 @@ import type { Product } from '../data/products';
 import Footer from '../components/shared/Footer'
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../store/productSlice';
+import type { RootState } from '../store';
 
 const AllProductsPage = () => {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state: any) => state.products);
+  const categories = useSelector((state: RootState) => state.categories.categories);
 
   // All hooks must be called before any return!
   const allColors = Array.from(new Set(products.map((p: any) => p.color)));
   const allMaterials = Array.from(new Set(products.map((p: any) => p.material)));
-  const allCategories = Array.from(new Set(products.map((p: any) => p.category)));
+  // Use backend categories for filter dropdown
+  const allCategoryNames = Array.isArray(categories) ? categories.map((cat: any) => cat.name) : [];
   const prices = products.map((p: any) => p.price);
   const minPrice = prices.length ? Math.floor(Math.min(...prices)) : 0;
   const maxPrice = prices.length ? Math.ceil(Math.max(...prices)) : 0;
@@ -108,7 +111,7 @@ const AllProductsPage = () => {
   // Helper for fallback image
   const getProductImage = (img: string) => {
     if (!img || img.startsWith('blob:') || img.startsWith('data:')) {
-      return '/public/placeholder.svg'; // fallback image path
+      return '/placeholder.svg'; // fallback image path
     }
     return img;
   };
@@ -132,7 +135,7 @@ const AllProductsPage = () => {
                 minPrice={minPrice}
                 maxPrice={maxPrice}
                 resetFilters={resetFilters}
-                categories={allCategories}
+                categories={allCategoryNames}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
               />
@@ -160,7 +163,7 @@ const AllProductsPage = () => {
                     minPrice={minPrice}
                     maxPrice={maxPrice}
                     resetFilters={resetFilters}
-                    categories={allCategories}
+                    categories={allCategoryNames}
                     selectedCategory={selectedCategory}
                     setSelectedCategory={setSelectedCategory}
                   />
@@ -189,7 +192,7 @@ const AllProductsPage = () => {
                               src={getProductImage(product.image)}
                               alt={product.name}
                               className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={e => { (e.target as HTMLImageElement).src = '/public/placeholder.svg'; }}
+                              onError={e => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                             />
                             {product.oldPrice && (
                               <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 text-xs font-semibold rounded">

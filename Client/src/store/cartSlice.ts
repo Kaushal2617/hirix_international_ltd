@@ -50,13 +50,19 @@ export const saveCart = createAsyncThunk(
       // @ts-ignore
       const token = getState().auth.token;
       // Normalize cart items for backend
-      const normalizedItems = cart.map(item => ({
-        productId: typeof item.id === 'string' ? parseInt(item.id, 10) : item.id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        quantity: item.quantity,
-      }));
+      const normalizedItems = cart
+        .map(item => {
+          const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+          if (!productId || isNaN(productId)) return null;
+          return {
+            productId,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            quantity: item.quantity,
+          };
+        })
+        .filter(Boolean);
       const res = await fetch('http://localhost:5000/api/cart-items/user', {
         method: 'POST',
         headers: {

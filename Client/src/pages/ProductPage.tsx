@@ -13,12 +13,14 @@ import { allProducts } from '@/data/products';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
+import { fetchProducts } from '@/store/productSlice';
+import type { AppDispatch } from '@/store';
 
 const ProductPage = () => {
   const { productId } = useParams();
   const { products, loading, error } = useSelector((state: any) => state.products);
   const product = products.find((p: any) => (p._id || p.id)?.toString() === productId);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [activeTab, setActiveTab] = useState('description');
 
   // Variant selection state
@@ -45,6 +47,10 @@ const ProductPage = () => {
     console.log('ProductPage productId:', productId);
     console.log('ProductPage found product:', product);
   }, [products, loading, error, productId]);
+
+  React.useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch, productId]);
 
   if (loading) {
     return (
