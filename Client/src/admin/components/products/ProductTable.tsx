@@ -322,7 +322,7 @@ export const ProductTable = ({
                       <input
                         type="checkbox"
                         checked={!!product.published}
-                        onChange={() => onUpdateProduct({ ...product, published: !product.published })}
+                        onChange={async () => { await onUpdateProduct({ ...product, published: !product.published }); }}
                         className="w-5 h-5 accent-green-500 ml-2 mr-1"
                       />
                       <span className="text-xs text-gray-600">{product.published ? "Published" : "Unpublished"}</span>

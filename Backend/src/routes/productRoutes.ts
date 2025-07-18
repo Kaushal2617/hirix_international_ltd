@@ -10,6 +10,7 @@ const router = Router();
 router.use(logProductRequest);
 
 router.get('/', productController.getAllProducts);
+router.get('/admin/all', authenticate, isAdmin, productController.getAllProductsAdmin);
 router.get('/:id', productController.getProductById);
 router.post('/', authenticate, isAdmin, productController.createProduct);
 router.put('/:id', authenticate, isAdmin, productController.updateProduct);

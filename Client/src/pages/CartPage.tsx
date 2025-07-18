@@ -48,8 +48,8 @@ const CartPage: React.FC = () => {
   const CartItemsList = () => (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 space-y-4">
-        {cartItems.map((item) => (
-          <div key={item.id} className="relative group border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
+        {cartItems.map((item, idx) => (
+          <div key={item.id ? `${item.id}-${idx}` : idx} className="relative group border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
             {/* Remove Button */}
             <button
               onClick={() => dispatch(removeItem(item.id))}

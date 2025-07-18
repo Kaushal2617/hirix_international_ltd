@@ -8,7 +8,8 @@ import { toast } from "@/hooks/use-toast"
 import { ProductTable } from "../components/products/ProductTable"
 import { SimpleAddProductForm, type SimpleProduct } from "../components/products/SimpleAddProductForm"
 import { VariantAddProductForm, type VariantProduct } from "../components/products/VariantAddProductForm"
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchProducts } from '../../store/productSlice';
 
 // Unified Product interface that supports both simple and variant products
 interface UnifiedProduct {
@@ -69,7 +70,9 @@ interface ProductVariant {
 // Remove: interface DataProduct, convertProducts function, and any usage of convertProducts
 
 const AdminProducts = () => {
+  const dispatch = useDispatch();
   const [products, setProducts] = useState<UnifiedProduct[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<{ id: string; name: string }[]>([]);
   const [simpleDialogOpen, setSimpleDialogOpen] = useState(false);
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,6 +94,23 @@ const AdminProducts = () => {
       }
     };
     fetchProducts();
+  }, [token]);
+
+  // Fetch categories from backend on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/categories', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch categories');
+        const data = await res.json();
+        setCategoryOptions(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      }
+    };
+    fetchCategories();
   }, [token]);
 
   // Categories, materials, colors from products
@@ -169,6 +189,18 @@ const AdminProducts = () => {
   const handleUpdateProduct = async (updatedProduct: UnifiedProduct) => {
     // Ensure correct id is sent (MongoDB _id)
     const id = updatedProduct._id || updatedProduct.id;
+    // Combine length, width, height into dimensions
+    const { length, width, height, image, images, ...rest } = updatedProduct;
+    let imagesArray = images && images.length > 0 ? images : (image ? [image] : []);
+    if (image && imagesArray.length > 0) {
+      imagesArray = Array.from(new Set([image, ...imagesArray]));
+    }
+    const updatePayload = {
+      ...rest,
+      image,
+      images: imagesArray,
+      dimensions: { length, width, height },
+    };
     try {
       const res = await fetch(`http://localhost:5000/api/products/${id}`, {
         method: 'PUT',
@@ -176,7 +208,7 @@ const AdminProducts = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...updatedProduct, id: undefined, _id: undefined }), // remove id fields from body
+        body: JSON.stringify(updatePayload),
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -189,6 +221,7 @@ const AdminProducts = () => {
       }
       const data = await res.json();
       setProducts(products.map((product) => (product.id === id || product._id === id ? data : product)));
+      dispatch(fetchProducts()); // <-- Force refresh after update
       toast({
         title: 'Product updated',
         description: 'Product has been updated successfully',
@@ -311,7 +344,7 @@ const AdminProducts = () => {
         open={simpleDialogOpen}
         onOpenChange={setSimpleDialogOpen}
         onAddProduct={handleAddSimpleProduct}
-        categories={categories}
+        categories={categoryOptions.map(c => c.name)}
         materials={materials}
         colors={colors}
       />
@@ -321,7 +354,7 @@ const AdminProducts = () => {
         open={variantDialogOpen}
         onOpenChange={setVariantDialogOpen}
         onAddProduct={handleAddVariantProduct}
-        categories={categories}
+        categories={categoryOptions.map(c => c.name)}
         materials={materials}
         colors={colors}
       />

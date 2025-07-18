@@ -35,7 +35,11 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = action.payload; // only real data
+        // Only include published products
+        state.products = action.payload.filter(p => p.published !== false).map(p => ({
+          ...p,
+          outOfStock: p.inventory === 0
+        }));
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;

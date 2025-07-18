@@ -98,11 +98,21 @@ const CheckoutPage: React.FC = () => {
 
     setIsProcessing(true);
     try {
+      // Debug: Log cart items before validation
+      console.log('CHECKOUT CART ITEMS:', cartItems);
       // Strictly map and validate order items
       const orderItems = cartItems
         .map((item: any) => {
-          const id = item.productId !== undefined ? Number(item.productId) : (item.id !== undefined ? Number(item.id) : undefined);
-          if (!id || isNaN(id) || !item.name || typeof item.price !== 'number' || typeof item.quantity !== 'number' || !item.image) {
+          const id =
+            item.productId !== undefined ? item.productId.toString()
+            : item.id !== undefined ? item.id.toString()
+            : item._id !== undefined ? item._id.toString()
+            : undefined;
+          // Add fallback for missing image
+          const image = item.image || '/placeholder.svg';
+          if (!id || !item.name || typeof item.price !== 'number' || typeof item.quantity !== 'number' || !image) {
+            // Debug: Log invalid item
+            console.warn('INVALID CART ITEM:', item);
             return null;
           }
           return {
@@ -110,7 +120,7 @@ const CheckoutPage: React.FC = () => {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            image: item.image,
+            image,
           };
         })
         .filter(Boolean);
@@ -157,7 +167,7 @@ const CheckoutPage: React.FC = () => {
           street: values.address,
           city: values.city,
           state: values.state, // <-- Use state from form
-          zip: values.postalCode,
+          zip: values.postalCode, // ensure 'zip' is used, not 'postalCode'
           country: values.country,
         },
       };
@@ -180,6 +190,7 @@ const CheckoutPage: React.FC = () => {
           data = { error: 'No JSON response from backend' };
         }
         console.error('ORDER ERROR RESPONSE:', data);
+        alert('Order Error: ' + JSON.stringify(data, null, 2));
         throw new Error(data.error || 'Failed to create order');
       }
       // 2. Clear cart in backend and Redux only after order is successful
@@ -460,8 +471,8 @@ const CheckoutPage: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {cartItems.map((item) => (
-                          <TableRow key={item.id}>
+                        {cartItems.map((item, idx) => (
+                          <TableRow key={item.id ? `${item.id}-${idx}` : idx}>
                             <TableCell>
                               <div className="flex items-center">
                                 <div className="w-10 h-10 rounded bg-gray-100 mr-3 overflow-hidden">

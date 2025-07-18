@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find({ published: true });
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -61,5 +61,14 @@ export const deleteAllProducts = async (req: Request, res: Response) => {
     res.json({ message: 'All products deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete all products' });
+  }
+};
+
+export const getAllProductsAdmin = async (req: Request, res: Response) => {
+  try {
+    const products = await Product.find(); // No published filter
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products' });
   }
 }; 

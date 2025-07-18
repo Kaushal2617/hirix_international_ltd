@@ -2,7 +2,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface OrderItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -11,7 +11,7 @@ export interface OrderItem {
 
 const OrderItemSchema = new Schema<OrderItem>(
   {
-    id: { type: Number, required: true },
+    id: { type: String, required: true },
     name: { type: String, required: true },
     price: { type: Number, required: true },
     quantity: { type: Number, required: true },

@@ -248,8 +248,11 @@ const AdminCategories = () => {
           throw new Error(errorMsg);
         }
         const data = await res.json();
-        // Ensure subcategories is always an array
-        setCategories([...categories, { ...data, subcategories: data.subcategories || [] }]);
+        // Ensure subcategories is always an array and id is set
+        setCategories([
+          ...categories,
+          { ...data, id: data.id || data._id, subcategories: data.subcategories || [] }
+        ]);
         toast({
           title: 'Category created',
           description: `"${categoryName}" has been created`,
@@ -278,27 +281,36 @@ const AdminCategories = () => {
   };
 
   // Delete a subcategory
-  const handleDeleteSubcategory = (categoryId: string, subcategoryId: string) => {
+  const handleDeleteSubcategory = async (categoryId: string, subcategoryId: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this subcategory?");
-    if (confirmed) {
-      setCategories(categories.map(cat => {
-        if (cat.id === categoryId) {
-          return {
-            ...cat,
-            subcategories: cat.subcategories.filter(sub => sub.id !== subcategoryId)
-          };
-        }
-        return cat;
-      }));
+    if (!confirmed) return;
+    const parentCategory = categories.find(cat => cat.id === categoryId);
+    if (!parentCategory) return;
+    const updatedSubcategories = parentCategory.subcategories.filter(sub => sub.id !== subcategoryId);
+    try {
+      const res = await fetch(`http://localhost:5000/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...parentCategory, subcategories: updatedSubcategories }),
+      });
+      if (!res.ok) throw new Error('Failed to update category');
+      setCategories(categories.map(cat =>
+        cat.id === categoryId ? { ...cat, subcategories: updatedSubcategories } : cat
+      ));
       toast({
         title: "Subcategory deleted",
         description: "The subcategory has been deleted",
       });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
 
   // Save a subcategory (create or update)
-  const handleSaveSubcategory = () => {
+  const handleSaveSubcategory = async () => {
     if (!subcategoryName.trim()) {
       toast({
         title: "Error",
@@ -320,25 +332,18 @@ const AdminCategories = () => {
       return;
     }
 
+    let updatedSubcategories;
+    let toastTitle = "";
+    let toastDescription = "";
     if (currentSubcategory) {
       // Update existing subcategory
-      setCategories(categories.map(cat => {
-        if (cat.id === parentCategoryId) {
-          return {
-            ...cat,
-            subcategories: cat.subcategories.map(sub => 
-              sub.id === currentSubcategory.id 
-                ? { ...sub, name: subcategoryName, slug } 
-                : sub
-            )
-          };
-        }
-        return cat;
-      }));
-      toast({
-        title: "Subcategory updated",
-        description: `"${subcategoryName}" has been updated`,
-      });
+      updatedSubcategories = parentCategory.subcategories.map(sub =>
+        sub.id === currentSubcategory.id
+          ? { ...sub, name: subcategoryName, slug }
+          : sub
+      );
+      toastTitle = "Subcategory updated";
+      toastDescription = `"${subcategoryName}" has been updated`;
     } else {
       // Create new subcategory
       const newSubcategory: Subcategory = {
@@ -346,23 +351,32 @@ const AdminCategories = () => {
         name: subcategoryName,
         slug,
       };
-      
-      setCategories(categories.map(cat => {
-        if (cat.id === parentCategoryId) {
-          return {
-            ...cat,
-            subcategories: [...cat.subcategories, newSubcategory]
-          };
-        }
-        return cat;
-      }));
-      toast({
-        title: "Subcategory created",
-        description: `"${subcategoryName}" has been created under "${parentCategory.name}"`,
-      });
+      updatedSubcategories = [...parentCategory.subcategories, newSubcategory];
+      toastTitle = "Subcategory created";
+      toastDescription = `"${subcategoryName}" has been created under "${parentCategory.name}"`;
     }
 
-    setShowSubcategoryDialog(false);
+    try {
+      const res = await fetch(`http://localhost:5000/api/categories/${parentCategoryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...parentCategory, subcategories: updatedSubcategories }),
+      });
+      if (!res.ok) throw new Error('Failed to update category');
+      setCategories(categories.map(cat =>
+        cat.id === parentCategoryId ? { ...cat, subcategories: updatedSubcategories } : cat
+      ));
+      toast({
+        title: toastTitle,
+        description: toastDescription,
+      });
+      setShowSubcategoryDialog(false);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (

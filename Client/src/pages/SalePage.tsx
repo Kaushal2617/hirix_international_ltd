@@ -12,6 +12,7 @@ import { RootState } from '@/store';
 
 const SalePage = () => {
   const products = useSelector((state: RootState) => state.products.products);
+  const categories = useSelector((state: RootState) => state.categories.categories);
   const saleProducts = products.filter(p => p.oldPrice || p.sale);
   // Get responsive layout state
   const { isMobile } = useResponsiveLayout();
@@ -35,6 +36,9 @@ const SalePage = () => {
     resetFilters
   } = useCategoryFilters({ categoryProducts: saleProducts });
 
+  // Use backend categories for filter dropdown
+  const allCategoryNames = Array.isArray(categories) ? categories.map((cat: any) => cat.name) : [];
+
   // Filter props to pass to components
   const filterProps = {
     priceRange,
@@ -48,7 +52,7 @@ const SalePage = () => {
     minPrice,
     maxPrice,
     resetFilters,
-    categories: allSubcategories,
+    categories: allCategoryNames,
     selectedCategory,
     setSelectedCategory
   };
