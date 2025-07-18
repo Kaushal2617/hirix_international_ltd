@@ -7,6 +7,9 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0", // ✅ allow access from other devices on network
     port: 8080,
+    proxy: {
+      '/api': 'http://localhost:5000'
+    },
   },
   plugins: [
     react(),

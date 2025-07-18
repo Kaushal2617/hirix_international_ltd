@@ -26,14 +26,34 @@ const ForgotPasswordPage = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // This would be connected to the backend later 
-    toast({
-      title: "Reset link sent",
-      description: "If an account exists with this email, a password reset link has been sent.",
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const res = await fetch('/api/users/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: values.email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({
+          title: 'Reset link sent',
+          description: 'If an account exists with this email, a password reset link has been sent.',
+        });
+        form.reset();
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to send reset link',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network error',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+    }
   }
 
   return (
