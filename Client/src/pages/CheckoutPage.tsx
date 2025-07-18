@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ const formSchema = z.object({
   phone: z.string().min(1, "Phone number is required"),
   address: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"), // <-- Add state
+  county: z.string().min(1, "County is required"),
   postalCode: z.string().min(1, "Postal code is required"),
   country: z.string().min(1, "Country is required"),
   sameAddress: z.boolean().default(true),
@@ -58,7 +59,7 @@ const CheckoutPage: React.FC = () => {
       phone: "",
       address: "",
       city: "",
-      state: "", // <-- Add state default
+      county: "",
       postalCode: "",
       country: "",
       sameAddress: true,
@@ -166,39 +167,37 @@ const CheckoutPage: React.FC = () => {
           name: values.firstName + ' ' + values.lastName,
           street: values.address,
           city: values.city,
-          state: values.state, // <-- Use state from form
-          zip: values.postalCode, // ensure 'zip' is used, not 'postalCode'
+          county: values.county,
+          zip: values.postalCode,
           country: values.country,
         },
       };
       console.log('ORDER PAYLOAD:', JSON.stringify(orderPayload, null, 2));
       console.log('ORDER TOKEN:', token);
-      // 1. Create the order in the backend
-      const orderRes = await fetch('http://localhost:5000/api/orders', {
+      // Stripe Checkout integration
+      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      const paymentRes = await fetch('/api/payment/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(orderPayload),
+        body: JSON.stringify({
+          cartItems: orderItems,
+          customerInfo: {
+            ...values,
+            id: user?.id || user?._id || '',
+            email: values.email,
+          },
+        }),
       });
-      if (!orderRes.ok) {
-        let data;
-        try {
-          data = await orderRes.json();
-        } catch (e) {
-          data = { error: 'No JSON response from backend' };
-        }
-        console.error('ORDER ERROR RESPONSE:', data);
-        alert('Order Error: ' + JSON.stringify(data, null, 2));
-        throw new Error(data.error || 'Failed to create order');
+      const paymentData = await paymentRes.json();
+      if (!paymentRes.ok || !paymentData.url) {
+        throw new Error(paymentData.error || 'Failed to create Stripe session');
       }
-      // 2. Clear cart in backend and Redux only after order is successful
-      await dispatch(clearCartBackend() as any);
-      dispatch(clearCart());
-      setOrderPlaced(true); // Prevent empty cart UI from flashing
-      const mockSessionId = `mock_${Math.random().toString(36).substring(2, 10)}`;
-      navigate(`/payment-success?session_id=${mockSessionId}`);
+      // Optionally clear cart here if you want to clear before payment
+      // await dispatch(clearCartBackend() as any);
+      // dispatch(clearCart());
+      window.location.href = paymentData.url; // Redirect to Stripe Checkout
     } catch (error: any) {
       console.error("Checkout error:", error);
       toast({
@@ -249,204 +248,235 @@ const CheckoutPage: React.FC = () => {
                 <CardTitle className="text-xl">Customer Information</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                                <Form {...form}>
-                                    <form onSubmit={form.handleSubmit(handleCheckout, handleInvalid)} className="space-y-6">
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="firstName"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>First Name</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Sean" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="lastName"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Last Name</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Copper" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleCheckout, handleInvalid)} className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Sean" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Copper" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Email</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Sean.Copper@example.com" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="phone"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Phone Number</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="+44 999 999 9999" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Sean.Copper@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+44 999 999 9999" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                                        <FormField
-                                            control={form.control}
-                                            name="address"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Address</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Unit 2, 390 Victoria Rd E" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <div className="grid md:grid-cols-4 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="city"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>City</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Leicester" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="state"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>State</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Haryana" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="postalCode"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Postal Code</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="LE5 0LG" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="country"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Country</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Country" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Unit 2, 390 Victoria Rd E" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Leicester" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="county"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>County</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Greater London" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="postalCode"
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="e.g. SW1A 1AA"
+                                {...field}
+                                onBlur={async e => {
+                                  const value = e.target.value;
+                                  const ukPostcode = /^([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})$/i;
+                                  if (value.length > 3 && !ukPostcode.test(value)) {
+                                    toast({
+                                      title: "Not Deliverable",
+                                      description: "This pincode is not in the United Kingdom. We only deliver to UK postcodes.",
+                                      variant: "destructive"
+                                    });
+                                    return;
+                                  }
+                                  // Fetch county from postcodes.io
+                                  if (ukPostcode.test(value)) {
+                                    try {
+                                      const res = await fetch(`https://api.postcodes.io/postcodes/${value.replace(/\s+/g, '')}`);
+                                      const data = await res.json();
+                                      if (data.status === 200 && data.result) {
+                                        // Prefer admin_county, fallback to region or admin_district
+                                        const county = data.result.admin_county || data.result.region || data.result.admin_district || '';
+                                        if (county) {
+                                          form.setValue('county', county);
+                                        }
+                                      }
+                                    } catch (err) {
+                                      // fail silently
+                                    }
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Country</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Country" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                                        <FormField
-                                            control={form.control}
-                                            name="sameAddress"
-                                            render={({ field }) => (
-                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value}
-                                                            onCheckedChange={field.onChange}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        Shipping address same as billing address
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )}
-                                        />
+                    <FormField
+                      control={form.control}
+                      name="sameAddress"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Shipping address same as billing address
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
 
-                                        <FormField
-                                            control={form.control}
-                                            name="notes"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Order Notes (Optional)</FormLabel>
-                                                    <FormControl>
-                                                        <Textarea
-                                                            placeholder="Special instructions for delivery"
-                                                            className="resize-none"
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Order Notes (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Special instructions for delivery"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
 
-                                        <FormField
-                                            control={form.control}
-                                            name="saveInfo"
-                                            render={({ field }) => (
-                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value}
-                                                            onCheckedChange={field.onChange}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        Save this information for next time
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )}
-                                        />
+                    <FormField
+                      control={form.control}
+                      name="saveInfo"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Save this information for next time
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
 
-                                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-md flex items-start space-x-3">
-                                            <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
-                                            <p className="text-sm text-amber-800">
-                                                This is a demo checkout. In a real implementation, you would be redirected to Stripe's secure checkout page.
-                                            </p>
-                                        </div>
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-md flex items-start space-x-3">
+                      <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                      <p className="text-sm text-amber-800">
+                        This is a demo checkout. In a real implementation, you would be redirected to Stripe's secure checkout page.
+                      </p>
+                    </div>
 
-                                        <Button
-                                            type="submit"
-                                            className="w-full bg-red-500 hover:bg-red-600"
-                                            disabled={isProcessing}
-                                        >
-                                            {isProcessing ? "Processing..." : "Place Order"}
-                                        </Button>
-                                    </form>
-                                </Form>
-                            </CardContent>
+                    <Button
+                      type="submit"
+                      className="w-full bg-red-500 hover:bg-red-600"
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? "Processing..." : "Place Order"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
             </Card>
           </div>
 
@@ -534,7 +564,6 @@ const CheckoutPage: React.FC = () => {
                       <div className="bg-white p-1 rounded border border-gray-200">
                         <img src="https://cdn-icons-png.flaticon.com/512/196/196565.png" alt="PayPal" className="h-6" />
                       </div>
-            {/* Removed Apple pay  */}
                       {/* <div className="bg-white p-1 rounded border border-gray-200">
                         <img src="https://cdn-icons-png.flaticon.com/512/5977/5977576.png" alt="Apple Pay" className="h-6" />
                       </div> */}

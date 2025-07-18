@@ -13,6 +13,8 @@ import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { register } from '@/store/authSlice';
 import type { RootState } from '@/store';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -47,26 +49,66 @@ const RegisterPage = () => {
   });
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state: RootState) => state.auth);
+  const [otpDialogOpen, setOtpDialogOpen] = React.useState(false);
+  const [pendingEmail, setPendingEmail] = React.useState('');
+  const [pendingName, setPendingName] = React.useState('');
+  const { toast } = useToast();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const resultAction = await dispatch(register({
-        name: values.name,
-        email: values.email,
-        contact: 'N/A', // You may want to add a contact field to the form
-        password: values.password,
-        addresses: [], // You may want to add addresses to the form
-      }) as any);
-      if (register.fulfilled.match(resultAction)) {
-        navigate('/login');
+      // Show OTP dialog instantly for fast UX
+      setPendingEmail(values.email);
+      setPendingName(values.name);
+      setOtpDialogOpen(true);
+      // Call backend to request OTP
+      const res = await fetch('/api/users/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          contact: 'N/A',
+          password: values.password,
+          addresses: [],
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Already set dialog open above for instant UX
+        toast({
+          title: 'OTP Sent',
+          description: 'An OTP has been sent to your email address. Please check your inbox.',
+        });
+      } else {
+        toast({
+          title: 'Registration Error',
+          description: data.error || 'Failed to send OTP',
+          variant: 'destructive',
+        });
       }
     } catch (err) {
-      // error is handled by Redux
+      toast({
+        title: 'Network error',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
     }
   }
 
+  // OTP dialog handlers
+  const handleOtpDialogClose = () => setOtpDialogOpen(false);
+  const handleOtpSuccess = () => {
+    setOtpDialogOpen(false);
+    toast({
+      title: 'Registration Successful',
+      description: 'You can now sign in.',
+    });
+    navigate('/login');
+  };
+
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-indigo-50 overflow-hidden">
+      <OtpVerificationDialog open={otpDialogOpen} email={pendingEmail} onClose={handleOtpDialogClose} onSuccess={handleOtpSuccess} />
       {/* Animated Blurred Gradient Circles */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}

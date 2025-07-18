@@ -23,15 +23,19 @@ export interface UserDocument extends Document {
   password: string;
   role: 'user' | 'admin';
   addresses: Address[];
+  resetPasswordToken?: string;
+  resetPasswordExpires?: number;
 }
 
 const UserSchema = new Schema<UserDocument>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  contact: { type: String, required: true },
+  contact: { type: String }, // made optional for registration flexibility
   password: { type: String, required: true, select: false },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
-  addresses: [AddressSchema],
+  addresses: { type: [AddressSchema], required: false }, // made optional for registration flexibility
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Number },
 }, { timestamps: true });
 
 export const User = mongoose.model<UserDocument>('User', UserSchema); 

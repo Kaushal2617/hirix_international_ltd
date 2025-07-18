@@ -15,6 +15,7 @@ import SignInPage from "./pages/SignInPage";
 import RegisterPage from "./pages/RegisterPage";
 import OrdersPage from "./pages/OrdersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import CartPage from "./pages/CartPage";
 import WishlistPage from "./pages/WishlistPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -97,6 +98,7 @@ const App = () => {
               <Route path="/login" element={<SignInPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+<Route path="/reset-password" element={<ResetPasswordPage />} />
               {/* Client side Routes wrapped in ClientLayout (with Navbar) */}
               <Route element={<ClientLayout categories={categoriesWithSpecials} />}>
                 <Route path="/" element={<Index categories={categoriesWithSpecials} />} />
