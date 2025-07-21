@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 import Navbar from '../components/navbar/Navbar';
+import { useShoppingContext } from '@/contexts/ShoppingContext';
 
 const PaymentSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();

@@ -3,7 +3,12 @@ import { Banner } from '../models/Banner';
 
 export const getAllBanners = async (req: Request, res: Response) => {
   try {
-    const banners = await Banner.find();
+    const { type } = req.query;
+    let query = {};
+    if (type) {
+      query = { type };
+    }
+    const banners = await Banner.find(query);
     res.json(banners);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch banners' });

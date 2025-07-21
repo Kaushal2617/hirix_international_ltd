@@ -71,7 +71,7 @@ const normalizeProductId = (product: AdminProduct) => ({
   id: product.id || (product as any)?._id,
 });
 
-const getProductId = (product: AdminProduct) => product._id || product.id;
+const getProductId = (product: AdminProduct) => product.id;
 
 export const ProductTable = ({ 
   products, 
@@ -169,8 +169,7 @@ export const ProductTable = ({
     }
 
     // Wait for update to succeed before closing dialog
-    const success = await onUpdateProduct(editedProduct as AdminProduct);
-    if (success) {
+    await onUpdateProduct(editedProduct as AdminProduct);
       setEditDialogOpen(false);
       setCurrentProduct(null);
       setEditedProduct(null);
@@ -178,8 +177,6 @@ export const ProductTable = ({
         title: "Product updated",
         description: `${editedProduct.name} has been updated successfully`,
       });
-    }
-    // If not success, do not close dialog
   };
 
   const handleApplyDiscount = () => {
@@ -317,15 +314,15 @@ export const ProductTable = ({
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    {/* Publish Toggle */}
+                    {/* Unpublished Toggle */}
                     <label className="flex items-center cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={!!product.published}
-                        onChange={async () => { await onUpdateProduct({ ...product, published: !product.published }); }}
+                        checked={!product.published}
+                        onChange={async () => { await onUpdateProduct({ ...product, published: product.published ? false : true }); }}
                         className="w-5 h-5 accent-green-500 ml-2 mr-1"
                       />
-                      <span className="text-xs text-gray-600">{product.published ? "Published" : "Unpublished"}</span>
+                      <span className="text-xs text-gray-600">{!product.published ? "Unpublished" : "Published"}</span>
                     </label>
                     <Button 
                       variant="outline" 

@@ -11,6 +11,8 @@ export interface Product {
     category: string;
     color: string;
     material: string;
+    brand?: string; // Added
+    model?: string; // Added
     description?: string;
     details?: string[];
     newArrival?: boolean;
@@ -36,6 +38,8 @@ export interface Variant {
     inventory: number;
     images: string[];
     description: string;
+    brand?: string; // Added
+    model?: string; // Added
 }
 
 export const allProducts: Product[] = [
@@ -52,6 +56,8 @@ export const allProducts: Product[] = [
     category: "Living Room",
     color: "Gray",
     material: "Fabric",
+    brand: "Hirix",
+    model: "HIR-100",
     description: "This modern L-shaped sectional sofa features a reversible chaise lounge that can be positioned on either side to suit your living space.",
     newArrival: false,
     inventory: 10,
@@ -69,6 +75,8 @@ export const allProducts: Product[] = [
         inventory: 10,
         images: ["https://hirixdirect.co.uk/uploads/products/67d2f63383984_235782643.jpg"],
         description: 'Gray, Large, Fabric, Matte finish',
+        brand: "Hirix",
+        model: "HIR-11a"
       },
       {
         id: '1b',
@@ -81,6 +89,8 @@ export const allProducts: Product[] = [
         inventory: 5,
         images: ["https://hirixdirect.co.uk/uploads/products/679cd99babae3_2051974507.jpg"],
         description: 'Blue, Medium, Velvet, Glossy finish',
+        brand: "Hirix",
+        model: "HIR-11b"
       }
     ]
   },
@@ -95,6 +105,8 @@ export const allProducts: Product[] = [
     category: "Home Office",
     color: "Black",
     material: "Leather",
+    brand: "Hirix",
+    model: "HIR-200",
     description: "Experience premium comfort with this ergonomic office chair, featuring adjustable height, tilt mechanism, and padded armrests.",
     newArrival: false,
     inventory: 5
@@ -110,6 +122,8 @@ export const allProducts: Product[] = [
     category: "Outdoor",
     color: "Beige",
     material: "Metal",
+    brand: "Hirix",
+    model: "HIR-300",
     description: "Enjoy your outdoor space with this comfortable 3-seat swing chair featuring a weather-resistant canopy and sturdy metal frame.",
     newArrival: false,
     inventory: 7
@@ -125,6 +139,8 @@ export const allProducts: Product[] = [
     category: "Bedroom",
     color: "Brown",
     material: "Wood",
+    brand: "Hirix",
+    model: "HIR-400",
     description: "This elegant 5-drawer chest offers ample storage space for your clothes and accessories, with smooth gliding drawers and solid wood construction.",
     newArrival: false,
     inventory: 3
@@ -140,6 +156,8 @@ export const allProducts: Product[] = [
     category: "Garden",
     color: "Black",
     material: "Metal",
+    brand: "Hirix",
+    model: "HIR-500",
     description: "Perfect for urban gardeners, this raised planter box provides optimal drainage and growing conditions for your plants and vegetables.",
     newArrival: false,
     inventory: 12
@@ -155,6 +173,8 @@ export const allProducts: Product[] = [
     category: "Garden",
     color: "Black",
     material: "Metal",
+    brand: "Hirix",
+    model: "HIR-600",
     description: "Transform your patio with this multifunctional fire pit table that doubles as a BBQ grill, perfect for outdoor entertaining all year round.",
     newArrival: false,
     inventory: 0

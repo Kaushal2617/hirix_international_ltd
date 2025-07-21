@@ -11,6 +11,8 @@ export interface Variant {
   inventory: number;
   images: string[];
   description: string;
+  brand?: string;
+  productModel?: string;
 }
 
 const VariantSchema = new Schema<Variant>(
@@ -25,6 +27,8 @@ const VariantSchema = new Schema<Variant>(
     inventory: { type: Number, required: true },
     images: [String],
     description: { type: String, required: true },
+    brand: { type: String },
+    productModel: { type: String },
   },
   { _id: false }
 );
@@ -42,6 +46,8 @@ export interface ProductDocument extends Document {
   category: string;
   color: string;
   material: string;
+  brand?: string;
+  productModel?: string;
   description?: string;
   details?: string[];
   sale?: boolean;
@@ -56,6 +62,7 @@ export interface ProductDocument extends Document {
   };
   aPlusImage?: string;
   variants?: Variant[];
+  published?: boolean;
 }
 
 const ProductSchema = new Schema<ProductDocument>(
@@ -72,6 +79,8 @@ const ProductSchema = new Schema<ProductDocument>(
     category: { type: String, required: true },
     color: { type: String, required: true },
     material: { type: String, required: true },
+    brand: { type: String },
+    productModel: { type: String },
     description: String,
     details: [String],
     sale: { type: Boolean, default: false },
@@ -86,6 +95,7 @@ const ProductSchema = new Schema<ProductDocument>(
     },
     aPlusImage: String,
     variants: [VariantSchema],
+    published: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

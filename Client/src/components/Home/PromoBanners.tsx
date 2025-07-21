@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Truck, Shield, Clock, Star, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { allProducts } from '../../data/products';
-import { banners } from '@/data/banners';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchBanners } from '@/store/bannerSlice';
+import { useEffect } from 'react';
 
 const promoItems = [
   {
@@ -37,16 +39,24 @@ const promoItems = [
 ];
 
 const bestSellers = allProducts.slice(0, 4);
-const miniBanners = banners.filter(b => b.type === 'mini' && b.imageUrl);
 
 const fallbackMiniImage = 'https://placehold.co/400x200/EEE/31343C?text=Mini+Banner';
 
 const PromoBanners = () => {
+  const dispatch = useDispatch();
+  const { banners, loading } = useSelector((state: any) => state.banners);
+  const miniBanners = banners.filter((b: any) => b.type === 'mini' && b.imageUrl);
+  useEffect(() => {
+    if (!banners.length) dispatch(fetchBanners() as any);
+  }, [dispatch, banners.length]);
+
   return (
     <section className="py-10">
       <div className="container mx-auto px-4">
         {/* Discover More Mini Banners */}
-        {miniBanners.length > 1 && (
+        {loading ? (
+          <div className="h-32 flex items-center justify-center text-gray-500">Loading banners...</div>
+        ) : miniBanners.length > 1 && (
           <div className="mb-10">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <ArrowRight className="w-6 h-6 text-red-400" /> Discover More

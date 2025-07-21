@@ -23,7 +23,11 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const product = new Product(req.body);
+    const productData = { ...req.body };
+    if (typeof productData.published === 'undefined') {
+      productData.published = true;
+    }
+    const product = new Product(productData);
     await product.save();
     res.status(201).json(product);
   } catch (err) {
