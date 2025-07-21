@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { banners as initialBanners, Banner } from "@/data/banners";
-import { allProducts } from "@/data/products";
+import { fetchCategories } from '@/store/categorySlice';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -54,11 +54,10 @@ const BannerImageUploader = ({ onUpload }) => {
   );
 };
 
-const categories = Array.from(new Set(allProducts.map(p => p.category)));
-
 const AdminBanners: React.FC = () => {
   const dispatch = useDispatch();
   const { banners, loading, error } = useSelector((state: any) => state.banners);
+  const { categories, loading: categoriesLoading } = useSelector((state: any) => state.categories);
   const [tab, setTab] = useState<'hero' | 'mini'>('hero');
   // Shared dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -75,6 +74,10 @@ const AdminBanners: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchBanners() as any);
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchCategories() as any);
   }, [dispatch]);
 
   const resetForm = () => {
@@ -97,6 +100,7 @@ const AdminBanners: React.FC = () => {
     try {
       await dispatch(addBanner({ imageUrl: heroImageUrl, mobileImageUrl: heroMobileImageUrl, category: heroCategory, type: 'hero' }) as any).unwrap();
       toast({ title: "Banner added", description: "New hero banner has been added." });
+      await dispatch(fetchBanners() as any);
       setDialogOpen(false);
       resetForm();
     } catch (err: any) {
@@ -113,6 +117,7 @@ const AdminBanners: React.FC = () => {
     try {
       await dispatch(addBanner({ imageUrl: miniImageUrl, mobileImageUrl: miniMobileImageUrl, title: miniTitle, link: miniLink, type: 'mini' }) as any).unwrap();
       toast({ title: "Banner added", description: "New mini banner has been added." });
+      await dispatch(fetchBanners() as any);
       setDialogOpen(false);
       resetForm();
     } catch (err: any) {
@@ -226,16 +231,20 @@ const AdminBanners: React.FC = () => {
                 </div>
                 <div className="mb-4">
                   <Label>Category *</Label>
+                  {categoriesLoading ? (
+                    <div className="text-gray-500 text-sm">Loading categories...</div>
+                  ) : (
                   <select
                     className="w-full border rounded px-3 py-2 mt-1"
                     value={heroCategory}
                     onChange={e => setHeroCategory(e.target.value)}
                   >
                     <option value="">Select category</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      {categories.map((cat: any) => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
                     ))}
                   </select>
+                  )}
                 </div>
               </>
             ) : (
@@ -269,6 +278,23 @@ const AdminBanners: React.FC = () => {
                     placeholder="e.g. /best-sellers"
                   />
                   <p className="text-xs text-gray-500">Default: /best-sellers</p>
+                </div>
+                <div className="mb-4">
+                  <Label>Category *</Label>
+                  {categoriesLoading ? (
+                    <div className="text-gray-500 text-sm">Loading categories...</div>
+                  ) : (
+                    <select
+                      className="w-full border rounded px-3 py-2 mt-1"
+                      value={heroCategory}
+                      onChange={e => setHeroCategory(e.target.value)}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((cat: any) => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </>
             )}

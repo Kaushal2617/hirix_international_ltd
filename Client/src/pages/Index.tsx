@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import HeroCarousel from '../components/Home/HeroCarousel';
 import FeaturedProducts from '../components/Home/FeaturedProducts';
 import CategoryGrid from '../components/Home/CategoryGrid';
-import PromoBanners from '../components/Home/PromoBanners';
 import Footer from '../components/shared/Footer';
 import AnimatedProductShowcase from '../components/Home/AnimatedProductShowcase';
 
@@ -19,7 +18,6 @@ const Index = ({ categories = [] }) => {
         <AnimatedProductShowcase />
         <CategoryGrid categories={categories.filter(cat => !!cat.image)} />
         
-        <PromoBanners />
       </main>
       
       <Footer />

@@ -32,6 +32,8 @@ export interface SimpleProduct {
   id: string
   sku: string
   name: string
+  brand: string
+  productModel: string // Renamed from model
   category: string
   price: number
   oldPrice?: number
@@ -67,6 +69,8 @@ export const SimpleAddProductForm = ({
   const [formData, setFormData] = useState({
     sku: "",
     name: "",
+    brand: "",
+    model: "",
     category: "",
     price: 0,
     oldPrice: 0,
@@ -149,6 +153,8 @@ export const SimpleAddProductForm = ({
       id: Math.random().toString(36).substring(2, 9),
       sku: formData.sku,
       name: formData.name,
+      brand: formData.brand,
+      productModel: formData.model, // Map model to productModel
       category: formData.category,
       price: formData.price,
       oldPrice: formData.oldPrice || undefined,
@@ -191,6 +197,8 @@ export const SimpleAddProductForm = ({
     setFormData({
       sku: "",
       name: "",
+      brand: "",
+      model: "",
       category: "",
       price: 0,
       oldPrice: 0,
@@ -267,6 +275,24 @@ export const SimpleAddProductForm = ({
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     placeholder="Enter product name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="brand">Brand *</Label>
+                  <Input
+                    id="brand"
+                    value={formData.brand}
+                    onChange={(e) => handleInputChange("brand", e.target.value)}
+                    placeholder="Enter brand name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="model">Model *</Label>
+                  <Input
+                    id="model"
+                    value={formData.model}
+                    onChange={(e) => handleInputChange("model", e.target.value)}
+                    placeholder="Enter model number"
                   />
                 </div>
 
@@ -431,6 +457,7 @@ export const SimpleAddProductForm = ({
             <div className="bg-orange-50 p-4 rounded-lg">
               <h3 className="font-semibold text-orange-900 mb-3">Product Images *</h3>
               <ImageUploader
+                onUpload={() => {}}
                 onMainImageUpload={(url) => setMainImagePreview(url)}
                 onAdditionalImagesUpload={(urls) => setAdditionalImagePreviews([...additionalImagePreviews, ...urls])}
                 onRemoveMainImage={() => setMainImagePreview("")}

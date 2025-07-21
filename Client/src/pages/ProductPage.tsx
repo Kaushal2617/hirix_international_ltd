@@ -325,7 +325,7 @@ const ProductPage = () => {
               </div>
               
               {/* Short description */}
-              <div className="text-gray-700 mb-6" dangerouslySetInnerHTML={{ __html: display.description }} />
+              {/* <div className="text-gray-700 mb-6" dangerouslySetInnerHTML={{ __html: display.description }} /> */}
               
               {/* Color and Material */}
               <div className="mb-6 space-y-3">
@@ -454,13 +454,13 @@ const ProductPage = () => {
                   <dt className="w-1/3 flex items-center gap-2 text-gray-600 font-medium">
                     <Tag className="w-5 h-5 text-gray-400" /> Brand
                   </dt>
-                  <dd className="w-2/3 text-gray-900 font-bold">Hirix</dd>
+                  <dd className="w-2/3 text-gray-900 font-bold">{(selectedVariant?.brand || product.brand) ?? "N/A"}</dd>
                 </div>
                 <div className="flex items-center py-3">
                   <dt className="w-1/3 flex items-center gap-2 text-gray-600 font-medium">
                     <User className="w-5 h-5 text-gray-400" /> Model
                   </dt>
-                  <dd className="w-2/3 text-gray-900">HIR-{product.id}00</dd>
+                  <dd className="w-2/3 text-gray-900">{(selectedVariant?.productModel || product.productModel) ?? `HIR-${product.id}00`}</dd>
                 </div>
                 <div className="flex items-center py-3">
                   <dt className="w-1/3 flex items-center gap-2 text-gray-600 font-medium">

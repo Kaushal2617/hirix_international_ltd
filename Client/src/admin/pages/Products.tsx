@@ -79,11 +79,9 @@ const AdminProducts = () => {
   const [categoryFilter, setCategoryFilter] = useState("");
   const { token } = useSelector((state: any) => state.auth);
 
-  // Fetch products from backend on mount
-  useEffect(() => {
-    const fetchProducts = async () => {
+  const fetchAllAdminProducts = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/products', {
+      const res = await fetch('http://localhost:5000/api/products/admin/all', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed to fetch products');
@@ -93,7 +91,8 @@ const AdminProducts = () => {
         toast({ title: 'Error', description: err.message, variant: 'destructive' });
       }
     };
-    fetchProducts();
+  useEffect(() => {
+    fetchAllAdminProducts();
   }, [token]);
 
   // Fetch categories from backend on mount
@@ -114,9 +113,9 @@ const AdminProducts = () => {
   }, [token]);
 
   // Categories, materials, colors from products
-  const categories = Array.from(new Set(products.map((product) => product.category)));
-  const materials = Array.from(new Set(products.map((product) => product.material)));
-  const colors = Array.from(new Set(products.map((product) => product.color)));
+  const categories = Array.from(new Set(products.map((product: any) => product.category))) as string[];
+  const materials = Array.from(new Set(products.map((product: any) => product.material))) as string[];
+  const colors = Array.from(new Set(products.map((product: any) => product.color))) as string[];
 
   // Convert simple product to unified format
   const convertSimpleProduct = (simpleProduct: SimpleProduct): UnifiedProduct => {
@@ -151,8 +150,7 @@ const AdminProducts = () => {
         body: JSON.stringify(product),
       });
       if (!res.ok) throw new Error('Failed to add product');
-      const data = await res.json();
-      setProducts([...products, data]);
+      await fetchAllAdminProducts(); // Refresh products after add
       toast({
         title: 'Simple Product Added! 🎉',
         description: `${product.name} has been added to your inventory`,
@@ -174,8 +172,7 @@ const AdminProducts = () => {
         body: JSON.stringify(product),
       });
       if (!res.ok) throw new Error('Failed to add product');
-      const data = await res.json();
-      setProducts([...products, data]);
+      await fetchAllAdminProducts(); // Refresh products after add
       toast({
         title: 'Product with Variants Added! 🚀',
         description: `${product.name} with ${product.variants?.length || 0} variants has been added to your inventory`,
@@ -187,46 +184,31 @@ const AdminProducts = () => {
 
   // Update product handler
   const handleUpdateProduct = async (updatedProduct: UnifiedProduct) => {
-    // Ensure correct id is sent (MongoDB _id)
-    const id = updatedProduct._id || updatedProduct.id;
-    // Combine length, width, height into dimensions
-    const { length, width, height, image, images, ...rest } = updatedProduct;
-    let imagesArray = images && images.length > 0 ? images : (image ? [image] : []);
-    if (image && imagesArray.length > 0) {
-      imagesArray = Array.from(new Set([image, ...imagesArray]));
-    }
-    const updatePayload = {
-      ...rest,
-      image,
-      images: imagesArray,
-      dimensions: { length, width, height },
-    };
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/products/${updatedProduct._id || updatedProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(updatePayload),
+        body: JSON.stringify(updatedProduct),
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        toast({
-          title: 'Error',
-          description: errorData.error || 'Failed to update product',
-          variant: 'destructive',
-        });
-        return false; // indicate failure
-      }
-      const data = await res.json();
-      setProducts(products.map((product) => (product.id === id || product._id === id ? data : product)));
-      dispatch(fetchProducts()); // <-- Force refresh after update
+      if (!res.ok) throw new Error('Failed to update product');
+      // Get the updated product from the backend
+      const updated = await res.json();
+      // Update local state with the updated product
+      setProducts(prev =>
+        prev.map(p =>
+          (p._id || p.id) === (updated._id || updated.id)
+            ? { ...p, ...updated }
+            : p
+        )
+      );
       toast({
         title: 'Product updated',
         description: 'Product has been updated successfully',
       });
-      return true; // indicate success
+      return true;
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
       return false;
@@ -235,7 +217,7 @@ const AdminProducts = () => {
 
   // Delete product handler
   const handleDeleteProduct = async (productId: string) => {
-    const productToDelete = products.find((p) => p.id === productId);
+    const productToDelete = products.find((p: any) => p.id === productId);
     try {
       const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
         method: 'DELETE',
@@ -244,7 +226,7 @@ const AdminProducts = () => {
         },
       });
       if (!res.ok) throw new Error('Failed to delete product');
-      setProducts(products.filter((product) => product.id !== productId));
+      await fetchAllAdminProducts(); // Refresh products after delete
       toast({
         title: 'Product deleted',
         description: `${productToDelete?.name || 'Product'} has been removed from inventory`,
@@ -256,16 +238,16 @@ const AdminProducts = () => {
   };
 
   // Filter products based on search term and category
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = products.filter((product: any) => {
     const matchesSearch =
       searchTerm === "" ||
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = categoryFilter === "" || product.category === categoryFilter
+    const matchesCategory = categoryFilter === "" || product.category === categoryFilter;
 
-    return matchesSearch && matchesCategory
-  })
+    return matchesSearch && matchesCategory;
+  });
 
   // Get statistics
   const totalProducts = products.length
@@ -337,6 +319,7 @@ const AdminProducts = () => {
         products={filteredProducts}
         onUpdateProduct={handleUpdateProduct}
         onDeleteProduct={handleDeleteProduct}
+        key={filteredProducts.map((p: any) => p._id || p.id).join(',')}
       />
 
       {/* Simple Add Product Dialog */}

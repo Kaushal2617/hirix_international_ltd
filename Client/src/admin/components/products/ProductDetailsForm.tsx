@@ -15,6 +15,8 @@ export interface ProductFormData {
   id?: string;
   sku: string;
   name: string;
+  brand?: string; // Added
+  productModel?: string; // Added
   category: string;
   price: number;
   oldPrice?: number;
@@ -136,6 +138,25 @@ export const ProductDetailsForm = ({
           value={formData.name}
           onChange={(e) => onChange("name", e.target.value)} 
           placeholder="Enter product name"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="productBrand">Brand *</Label>
+        <Input
+          id="productBrand"
+          value={formData.brand || ""}
+          onChange={e => onChange("brand", e.target.value)}
+          placeholder="Enter brand name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="productModel">Model *</Label>
+        <Input
+          id="productModel"
+          value={formData.productModel || ""}
+          onChange={e => onChange("productModel", e.target.value)}
+          placeholder="Enter model number"
         />
       </div>
 

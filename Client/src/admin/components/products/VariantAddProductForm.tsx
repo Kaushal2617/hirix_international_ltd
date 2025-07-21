@@ -59,6 +59,8 @@ export interface VariantProduct {
   id: string
   sku: string
   name: string
+  brand: string
+  productModel: string // Renamed from model
   category: string
   price: number
   oldPrice?: number
@@ -102,6 +104,8 @@ export const VariantAddProductForm = ({
   const [newProduct, setNewProduct] = useState({
     sku: "",
     name: "",
+    brand: "",
+    model: "",
     category: "",
     description: "",
     newArrival: false,
@@ -295,6 +299,8 @@ export const VariantAddProductForm = ({
       id: Math.random().toString(36).substring(2, 9),
       sku: newProduct.sku,
       name: newProduct.name,
+      brand: newProduct.brand,
+      productModel: newProduct.model, // Map model to productModel
       category: newProduct.category,
       price: defaultVariant.price,
       oldPrice: defaultVariant.oldPrice,
@@ -345,6 +351,8 @@ export const VariantAddProductForm = ({
     setNewProduct({
       sku: "",
       name: "",
+      brand: "",
+      model: "",
       category: "",
       description: "",
       newArrival: false,
@@ -422,6 +430,24 @@ export const VariantAddProductForm = ({
                         }
                       }}
                       placeholder="Enter product name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="brand">Brand *</Label>
+                    <Input
+                      id="brand"
+                      value={newProduct.brand}
+                      onChange={(e) => handleInputChange("brand", e.target.value)}
+                      placeholder="Enter brand name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="model">Model *</Label>
+                    <Input
+                      id="model"
+                      value={newProduct.model}
+                      onChange={(e) => handleInputChange("model", e.target.value)}
+                      placeholder="Enter model number"
                     />
                   </div>
 

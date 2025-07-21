@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchBanners } from '@/store/bannerSlice';
 import { motion, AnimatePresence, easeInOut } from "framer-motion"
 import { Link } from "react-router-dom"
 import { Sparkles } from "lucide-react"
 
-const showcaseCategories = [
+const fallbackShowcaseCategories = [
   {
     id: 1,
     title: "Showcase 1",
@@ -30,12 +32,16 @@ const showcaseCategories = [
     image: "https://hirixdirect.co.uk/uploads/products/679c996c889db_1155877497.jpg",
     link: "/sale",
   },
-]
+];
 
 const transitionDuration = 0.8
 const displayDuration = 3
 
 const AnimatedProductShowcase = () => {
+  const dispatch = useDispatch();
+  const { banners, loading } = useSelector((state: any) => state.banners);
+  const showcaseCategories = banners.filter((b: any) => b.type === 'mini' && b.imageUrl);
+  const categoriesToShow = showcaseCategories.length > 0 ? showcaseCategories : fallbackShowcaseCategories;
   const [leftIdx, setLeftIdx] = useState(0)
   const [rightIdx, setRightIdx] = useState(1)
   const [mobileIdx, setMobileIdx] = useState(0)
@@ -43,42 +49,48 @@ const AnimatedProductShowcase = () => {
   const [rightKey, setRightKey] = useState(1)
   const [mobileKey, setMobileKey] = useState(0)
 
+  useEffect(() => {
+    if (!banners.length) dispatch(fetchBanners() as any);
+  }, [dispatch, banners.length]);
+
   // Mobile single card timer - cycles through all images
   useEffect(() => {
     const interval = setInterval(() => {
-      setMobileIdx((prev) => (prev + 1) % showcaseCategories.length)
+      setMobileIdx((prev) => (prev + 1) % categoriesToShow.length)
       setMobileKey((prev) => prev + 1)
     }, displayDuration * 1000)
-
     return () => clearInterval(interval)
-  }, [])
+  }, [categoriesToShow.length])
 
   // Left card timer for desktop
   useEffect(() => {
     const interval = setInterval(() => {
-      setLeftIdx((prev) => (prev + 2) % showcaseCategories.length)
+      setLeftIdx((prev) => (prev + 2) % categoriesToShow.length)
       setLeftKey((prev) => prev + 1)
     }, displayDuration * 1000)
-
     return () => clearInterval(interval)
-  }, [])
+  }, [categoriesToShow.length])
 
   // Right card timer for desktop (staggered)
   useEffect(() => {
     const interval = setInterval(
       () => {
-        setRightIdx((prev) => (prev + 2) % showcaseCategories.length)
+        setRightIdx((prev) => (prev + 2) % categoriesToShow.length)
         setRightKey((prev) => prev + 1)
       },
       displayDuration * 1000 + displayDuration * 500,
     )
-
     return () => clearInterval(interval)
-  }, [])
+  }, [categoriesToShow.length])
 
-  const leftCategory = showcaseCategories[leftIdx]
-  const rightCategory = showcaseCategories[rightIdx]
-  const mobileCategory = showcaseCategories[mobileIdx]
+  if (!categoriesToShow.length) {
+    return <div className="h-64 flex items-center justify-center text-gray-500">No banners available.</div>;
+  }
+  const leftCategory = categoriesToShow[leftIdx] || {};
+  const rightCategory = categoriesToShow[rightIdx] || {};
+  const mobileCategory = categoriesToShow[mobileIdx] || {};
+
+  if (loading) return <div className="h-64 flex items-center justify-center text-gray-500">Loading banners...</div>;
 
   const cardVariants = {
     initial: { opacity: 0 },
@@ -111,11 +123,11 @@ const AnimatedProductShowcase = () => {
                     exit="exit"
                     className="absolute inset-0 bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300"
                   >
-                    <Link to={mobileCategory.link} className="block h-full">
+                    <Link to={mobileCategory.link || "/"} className="block h-full">
                       <div className="h-full w-full overflow-hidden rounded-2xl">
                         <img
                           src={mobileCategory.image || "/placeholder.svg"}
-                          alt={mobileCategory.title}
+                          alt={mobileCategory.title || "Banner"}
                           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                         />
                       </div>
@@ -140,11 +152,11 @@ const AnimatedProductShowcase = () => {
                 exit="exit"
                 className="absolute inset-0 bg-white rounded-2xl shadow-lg overflow-hidden w-full h-96 md:h-[28rem] cursor-pointer hover:shadow-2xl transition-all duration-300 flex flex-col z-10"
               >
-                <Link to={leftCategory.link} className="block h-full">
+                <Link to={leftCategory.link || "/"} className="block h-full">
                   <div className="h-full w-full overflow-hidden rounded-2xl">
                     <img
                       src={leftCategory.image || "/placeholder.svg"}
-                      alt={leftCategory.title}
+                      alt={leftCategory.title || "Banner"}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     />
                   </div>
@@ -164,11 +176,11 @@ const AnimatedProductShowcase = () => {
                 exit="exit"
                 className="absolute inset-0 bg-white rounded-2xl shadow-lg overflow-hidden w-full h-96 md:h-[28rem] cursor-pointer hover:shadow-2xl transition-all duration-300 flex flex-col z-10"
               >
-                <Link to={rightCategory.link} className="block h-full">
+                <Link to={rightCategory.link || "/"} className="block h-full">
                   <div className="h-full w-full overflow-hidden rounded-2xl">
                     <img
                       src={rightCategory.image || "/placeholder.svg"}
-                      alt={rightCategory.title}
+                      alt={rightCategory.title || "Banner"}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     />
                   </div>

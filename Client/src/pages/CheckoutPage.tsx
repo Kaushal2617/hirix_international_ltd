@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// @ts-ignore
 import { loadStripe } from '@stripe/stripe-js';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ShoppingBag, CreditCard, AlertCircle } from "lucide-react";
 import Navbar from '../components/navbar/Navbar';
-import { useDispatch, useSelector } from 'react-redux';
-import { clearCart, clearCartBackend } from '@/store/cartSlice';
+import { useShoppingContext } from '../Contexts/ShoppingContext';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { fetchProducts } from '@/store/productSlice';
+import { clearCartBackend, clearCart } from '@/store/cartSlice';
 
 const formSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -37,12 +39,10 @@ type FormValues = z.infer<typeof formSchema>;
 const CheckoutPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const cartItems = useSelector((state: any) => state.cart.items);
+  const { cartItems, user, token } = useShoppingContext();
   // If you have discount in Redux, use it; otherwise, set to 0 or local state
   const discount = 0; // Replace with Redux selector if discount is in Redux
   const [isProcessing, setIsProcessing] = useState(false);
-  const { user, token } = useSelector((state: any) => state.auth);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
   // Calculate order summary values
@@ -194,10 +194,13 @@ const CheckoutPage: React.FC = () => {
       if (!paymentRes.ok || !paymentData.url) {
         throw new Error(paymentData.error || 'Failed to create Stripe session');
       }
-      // Optionally clear cart here if you want to clear before payment
-      // await dispatch(clearCartBackend() as any);
-      // dispatch(clearCart());
-      window.location.href = paymentData.url; // Redirect to Stripe Checkout
+      // 2. Clear cart in backend and Redux only after order is successful
+      await dispatch(clearCartBackend() as any);
+      dispatch(clearCart());
+      await dispatch(fetchProducts() as any); // Refresh products after order
+      setOrderPlaced(true); // Prevent empty cart UI from flashing
+      const mockSessionId = `mock_${Math.random().toString(36).substring(2, 10)}`;
+      navigate(`/payment-success?session_id=${mockSessionId}`);
     } catch (error: any) {
       console.error("Checkout error:", error);
       toast({

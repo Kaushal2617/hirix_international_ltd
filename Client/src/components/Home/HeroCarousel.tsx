@@ -7,13 +7,16 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Link } from "react-router-dom";
-import { banners } from "@/data/banners";
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchBanners } from '@/store/bannerSlice';
 
 const HeroCarousel = () => {
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
-  const heroBanners = banners.filter(b => b.type === 'hero');
+  const dispatch = useDispatch();
+  const { banners, loading } = useSelector((state: any) => state.banners);
+  const heroBanners = banners.filter((b: any) => b.type === 'hero');
   const fallbackHeroBanners = [
     {
       id: 'demo-hero-1',
@@ -43,6 +46,10 @@ const HeroCarousel = () => {
   const displayBanners = heroBanners.length > 0 ? heroBanners : fallbackHeroBanners;
 
   useEffect(() => {
+    if (!banners.length) dispatch(fetchBanners() as any);
+  }, [dispatch, banners.length]);
+
+  useEffect(() => {
     if (!api) return;
     const onSelect = () => {
       const newIndex = api.selectedScrollSnap();
@@ -64,6 +71,8 @@ const HeroCarousel = () => {
     return () => clearInterval(interval);
   }, [api]);
 
+  if (loading) return <div className="h-64 flex items-center justify-center text-gray-500">Loading banners...</div>;
+
   return (
     <div className="relative mt-4 max-w-[1400px] mx-auto px-4 group">
       <Carousel
@@ -75,8 +84,8 @@ const HeroCarousel = () => {
         className="w-full group"
       >
         <CarouselContent>
-          {displayBanners.map((banner) => (
-            <CarouselItem key={banner.id}>
+          {displayBanners.map((banner, idx) => (
+            <CarouselItem key={banner.id || idx}>
               <Link to={banner.category ? `/category/${encodeURIComponent(banner.category)}` : "/"} className="block group">
                 <div className="relative h-[250px] md:h-[350px] lg:h-[450px] w-full overflow-hidden rounded-xl cursor-pointer">
                   <picture>

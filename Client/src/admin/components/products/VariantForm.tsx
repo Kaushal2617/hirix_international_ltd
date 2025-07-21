@@ -31,6 +31,8 @@ interface ProductVariant {
     height: number
   }
   isDefault?: boolean
+  brand?: string
+  productModel?: string
 }
 
 interface VariantFormProps {
@@ -99,6 +101,8 @@ export const VariantForm: React.FC<VariantFormProps> = ({
     length: 0,
     width: 0,
     height: 0,
+    brand: "", // Added
+    productModel: "", // Added
   })
 
   const [mainImagePreview, setMainImagePreview] = useState<string>("")
@@ -124,6 +128,8 @@ export const VariantForm: React.FC<VariantFormProps> = ({
         length: variant.dimensions?.length || 0,
         width: variant.dimensions?.width || 0,
         height: variant.dimensions?.height || 0,
+        brand: variant.brand || "", // Added
+        productModel: variant.productModel || "", // Added
       })
       setMainImagePreview(variant.mainImage)
       setAdditionalImagePreviews(variant.images)
@@ -146,6 +152,8 @@ export const VariantForm: React.FC<VariantFormProps> = ({
         length: 0,
         width: 0,
         height: 0,
+        brand: "", // Added
+        productModel: "", // Added
       })
       setMainImagePreview("")
       setAdditionalImagePreviews([])
@@ -205,6 +213,8 @@ export const VariantForm: React.FC<VariantFormProps> = ({
               height: formData.height,
             }
           : undefined,
+      brand: formData.brand || undefined, // Added
+      productModel: formData.productModel || undefined, // Added
     }
 
     onSubmit(variantData)
@@ -381,6 +391,25 @@ export const VariantForm: React.FC<VariantFormProps> = ({
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="variantBrand">Brand *</Label>
+              <Input
+                id="variantBrand"
+                value={formData.brand}
+                onChange={e => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                placeholder="Enter brand name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="variantModel">Model *</Label>
+              <Input
+                id="variantModel"
+                value={formData.productModel}
+                onChange={e => setFormData(prev => ({ ...prev, productModel: e.target.value }))}
+                placeholder="Enter model number"
+              />
             </div>
           </div>
 
