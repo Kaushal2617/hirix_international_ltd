@@ -7,29 +7,65 @@ const ImageUploader = ({ onUpload, onMainImageUpload, onAdditionalImagesUpload, 
   const token = useSelector((state) => state.auth.token);
 
   const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
     setUploading(true);
     setError('');
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await fetch('http://localhost:5000/api/products/upload-image', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Image upload failed');
-      }
-      const data = await response.json();
-      if (typeof onMainImageUpload === 'function') {
+      // If onAdditionalImagesUpload is provided, handle multiple files
+      if (typeof onAdditionalImagesUpload === 'function') {
+        const urls = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append('image', file);
+          const response = await fetch('http://localhost:5000/api/products/upload-image', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+          if (!response.ok) {
+            throw new Error('Image upload failed');
+          }
+          const data = await response.json();
+          urls.push(data.url);
+        }
+        onAdditionalImagesUpload(urls, files);
+      } else if (typeof onMainImageUpload === 'function') {
+        // Only one file for main image
+        const file = files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        const response = await fetch('http://localhost:5000/api/products/upload-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+        if (!response.ok) {
+          throw new Error('Image upload failed');
+        }
+        const data = await response.json();
         onMainImageUpload(data.url, file);
       } else if (typeof onUpload === 'function') {
+        // Only one file for generic upload
+        const file = files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        const response = await fetch('http://localhost:5000/api/products/upload-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+        if (!response.ok) {
+          throw new Error('Image upload failed');
+        }
+        const data = await response.json();
         onUpload(data.url);
       }
     } catch (err) {
@@ -41,7 +77,13 @@ const ImageUploader = ({ onUpload, onMainImageUpload, onAdditionalImagesUpload, 
 
   return (
     <div>
-      <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        disabled={uploading}
+        {...(typeof onAdditionalImagesUpload === 'function' ? { multiple: true } : {})}
+      />
       {uploading && <p>Uploading...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {/* Optionally render previews if provided */}

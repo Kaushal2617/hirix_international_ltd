@@ -461,12 +461,10 @@ export const SimpleAddProductForm = ({
                   }));
                 }}
                 onUpload={() => {}}
-                onAdditionalImagesUpload={() => {}}
                 onRemoveMainImage={() => {
                   setMainImagePreview("");
                   setFormData(prev => ({ ...prev, image: "" }));
                 }}
-                onRemoveAdditionalImage={() => {}}
                 mainImagePreview={mainImage}
                 additionalImagePreviews={[]}
               />
@@ -482,7 +480,6 @@ export const SimpleAddProductForm = ({
                   });
                 }}
                 onUpload={() => {}}
-                onMainImageUpload={() => {}}
                 onRemoveMainImage={() => {}}
                 onRemoveAdditionalImage={(idx) => {
                   setAdditionalImagePreviews(prev => {

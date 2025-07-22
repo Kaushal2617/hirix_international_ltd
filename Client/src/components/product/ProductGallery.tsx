@@ -56,9 +56,9 @@ const ProductGallery = ({
       src: img,
       alt: `${productName} - ${selectedColor || "Default"} - Image ${index + 1}`,
     })),
-    // ...(currentVideo
-    //   ? [{ type: "video" as const, src: currentVideo, alt: `${productName} - ${selectedColor || "Default"} - Video` }]
-    //   : []),
+    ...(currentVideo
+      ? [{ type: "video" as const, src: currentVideo, alt: `${productName} - ${selectedColor || "Default"} - Video` }]
+      : []),
   ]
 console.log("images lund "+allMedia.length)
   // Reset selected image when color changes
