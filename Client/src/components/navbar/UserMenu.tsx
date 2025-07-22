@@ -8,6 +8,9 @@ const UserMenu = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { cartItems, wishlistItems } = useShoppingContext();
 
+  // Defensive: wishlistItems fallback to empty array if undefined
+  const safeWishlistItems = wishlistItems || [];
+
   // Get user first name from localStorage
   let firstName = '';
   try {
@@ -109,9 +112,9 @@ const UserMenu = () => {
           <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-600 transition-all duration-300" />
         </span>
         <span className="hidden md:inline font-semibold tracking-wide ml-2">Wishlist</span>
-        {wishlistItems.length > 0 && (
+        {safeWishlistItems.length > 0 && (
           <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow border-2 border-white">
-            {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
+            {safeWishlistItems.length > 9 ? '9+' : safeWishlistItems.length}
           </span>
         )}
       </Link>

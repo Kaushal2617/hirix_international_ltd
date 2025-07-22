@@ -31,13 +31,14 @@ const AddProductPage = () => {
     material: "",
     color: "",
     description: "",
-    image: "",
+    image: "", // Restore image field
     images: [],
     video: "",
     details: "",
     rating: 4.0,
     reviewCount: 0,
     newArrival: false,
+    aPlusImage: ""
   });
   const [uploadedMainImage, setUploadedMainImage] = useState(null);
   const [uploadedAdditionalImages, setUploadedAdditionalImages] = useState([]);
@@ -64,10 +65,10 @@ const AddProductPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newProduct.sku || !newProduct.name || !newProduct.category || !newProduct.price || !newProduct.material || !newProduct.color || !mainImagePreview) {
+    if (!newProduct.sku || !newProduct.name || !newProduct.category || !newProduct.price || !newProduct.material || !newProduct.color || !newProduct.image) {
       toast({
         title: 'Missing fields',
-        description: 'Please fill out all required fields including main image.',
+        description: 'Please fill out all required fields including at least one product image.',
         variant: 'destructive',
       });
       return;
@@ -162,24 +163,34 @@ const AddProductPage = () => {
               onMainImageUpload={(url, file) => {
                 setMainImagePreview(url);
                 setUploadedMainImage(file);
-                handleInputChange("image", url);
+                setNewProduct(prev => ({
+                  ...prev,
+                  image: url, // Set image field
+                  images: [url, ...(prev.images || []).filter(img => img !== url)]
+                }));
               }}
               onAdditionalImagesUpload={(urls, files) => {
                 setAdditionalImagePreviews([...additionalImagePreviews, ...urls]);
                 setUploadedAdditionalImages([...uploadedAdditionalImages, ...files]);
-                const currentImages = newProduct.images || [];
-                handleInputChange("images", [...currentImages, ...urls]);
+                setNewProduct(prev => ({
+                  ...prev,
+                  images: Array.from(new Set([...(prev.images || []), ...urls]))
+                }));
               }}
               onRemoveMainImage={() => {
                 setMainImagePreview("");
                 setUploadedMainImage(null);
-                handleInputChange("image", "");
+                setNewProduct(prev => ({
+                  ...prev,
+                  image: "", // Clear image field
+                  images: prev.images ? prev.images.slice(1) : []
+                }));
               }}
               onRemoveAdditionalImage={idx => {
-                const currentImages = newProduct.images || [];
-                const updatedImages = [...currentImages];
-                updatedImages.splice(idx, 1);
-                handleInputChange("images", updatedImages);
+                setNewProduct(prev => ({
+                  ...prev,
+                  images: prev.images.filter((_, i) => i !== idx)
+                }));
                 const updatedPreviews = [...additionalImagePreviews];
                 updatedPreviews.splice(idx, 1);
                 setAdditionalImagePreviews(updatedPreviews);
@@ -193,6 +204,39 @@ const AddProductPage = () => {
             <p className="text-xs text-gray-500">
               Upload a high-quality image that clearly shows the product. Minimum dimensions: 1000x1000 pixels.
             </p>
+          </div>
+          {/* A+ Content Image Upload */}
+          <div className="space-y-2 mt-4">
+            <Label htmlFor="aPlusImage">A+ Content Image (Optional)</Label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    const response = await fetch('http://localhost:5000/api/products/upload-image', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                      },
+                      body: formData,
+                    });
+                    if (!response.ok) throw new Error('Image upload failed');
+                    const data = await response.json();
+                    setNewProduct(prev => ({ ...prev, aPlusImage: data.url }));
+                  } catch (err) {
+                    toast({ title: 'A+ Image Upload Error', description: (err as Error).message, variant: 'destructive' });
+                  }
+                }
+              }}
+              className="block"
+            />
+            {newProduct.aPlusImage && (
+              <img src={newProduct.aPlusImage} alt="A+ Content" className="w-full h-32 object-cover rounded mt-2" />
+            )}
           </div>
           <div className="space-y-2 mt-4">
             <Label htmlFor="productVideo">Video URL (Optional)</Label>

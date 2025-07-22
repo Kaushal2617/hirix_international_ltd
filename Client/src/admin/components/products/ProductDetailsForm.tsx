@@ -110,6 +110,10 @@ export const ProductDetailsForm = ({
     onChange("aPlusImage", "");
   };
 
+  // Derive main and additional image previews
+  const mainImage = formData.image || '';
+  const additionalImages = (formData.images || []).filter(img => img && img !== mainImage);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Basic Info Section */}
@@ -346,21 +350,42 @@ export const ProductDetailsForm = ({
           step="1"
         />
       </div>
+      {/* Product Images Section */}
       <div className="space-y-2 md:col-span-2">
-        <h3 className="text-lg font-medium mt-4">Product Images</h3>
-        <div className="border-t pt-2"></div>
+        <h3 className="text-lg font-medium mt-4">Main Product Image *</h3>
         <ImageUploader
-          mainImagePreview={formData.image}
-          additionalImagePreviews={formData.images || []}
-          onMainImageUpload={(url) => onChange('image', url)}
-          onRemoveMainImage={() => onChange('image', '')}
-          onAdditionalImagesUpload={(urls) => onChange('images', urls)}
+          onMainImageUpload={(url) => {
+            onChange('image', url);
+          }}
+          onUpload={() => {}}
+          onAdditionalImagesUpload={() => {}}
+          onRemoveMainImage={() => {
+            onChange('image', "");
+          }}
+          onRemoveAdditionalImage={() => {}}
+          mainImagePreview={mainImage}
+          additionalImagePreviews={[]}
+        />
+      </div>
+      <div className="space-y-2 md:col-span-2">
+        <h3 className="text-lg font-medium mt-4">Additional Product Images</h3>
+        <ImageUploader
+          onAdditionalImagesUpload={(urls) => {
+            // Add new images, no duplicates, and never duplicate main image
+            const all = [...(formData.images || []), ...urls];
+            const unique = Array.from(new Set(all)).filter(img => img && img !== mainImage);
+            onChange('images', unique);
+          }}
+          onUpload={() => {}}
+          onMainImageUpload={() => {}}
+          onRemoveMainImage={() => {}}
           onRemoveAdditionalImage={(idx) => {
-            const imgs = (formData.images || []).slice();
+            const imgs = additionalImages.slice();
             imgs.splice(idx, 1);
             onChange('images', imgs);
           }}
-          onReorderAdditionalImages={(newOrder) => onChange('images', newOrder)}
+          mainImagePreview={""}
+          additionalImagePreviews={additionalImages}
         />
       </div>
       {/* Specifications Section */}

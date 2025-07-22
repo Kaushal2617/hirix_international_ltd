@@ -5,11 +5,15 @@ import { allProducts } from '../data/products';
 import type { Product } from '../data/products';
 import Footer from '../components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { SlidersHorizontal, PackagePlus } from 'lucide-react';
+import { SlidersHorizontal, PackagePlus, Heart, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { Link } from 'react-router-dom';
+import { addItem as addToCart } from '../store/cartSlice';
+import { addItem as addToWishlist } from '../store/wishlistSlice';
+import { toast } from '@/components/ui/use-toast';
+import ProductCard from '@/components/product/ProductCard';
 
 const NewArrivalsBanner = () => (
   <section className="relative py-8 bg-gradient-to-br from-red-50 via-white to-green-50 overflow-hidden">
@@ -65,6 +69,32 @@ const NewArrivalsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(newArrivalProducts);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  const dispatch = useDispatch();
+
+  const handleAddToCart = (product: any) => {
+    dispatch(addToCart({ ...product, quantity: 1 }));
+    toast({
+      title: 'Added to Cart',
+      description: `${product.name} has been added to your cart.`
+    });
+  };
+  const handleAddToWishlist = (product: any) => {
+    const exists = (Array.isArray(wishlist) ? wishlist : []).find((item: any) => item.id === product.id);
+    if (exists) {
+      toast({
+        title: 'Already in Wishlist',
+        description: `${product.name} is already in your wishlist.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    dispatch(addToWishlist(product));
+    toast({
+      title: 'Added to Wishlist',
+      description: `${product.name} has been added to your wishlist.`
+    });
+  };
 
   // Handle responsive layout
   useEffect(() => {
@@ -179,25 +209,12 @@ const NewArrivalsPage = () => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filteredProducts.map((product) => (
-                    <Link to={`/product/${product._id || product.id}`} key={product._id || product.id}>
-                      <div className="group overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow rounded-lg">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="p-4">
-                          <div className="text-sm text-gray-500 mb-1">{product.category}</div>
-                          <h3 className="font-medium text-sm mb-2 line-clamp-2 h-10">{product.name}</h3>
-                          <div className="flex items-center mb-2">
-                            <span className="text-lg font-bold text-red-500">£{product.price.toFixed(2)}</span>
-                            {product.oldPrice && (
-                              <span className="ml-2 text-sm text-gray-500 line-through">£{product.oldPrice.toFixed(2)}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
+                    <ProductCard
+                      key={product._id || product.id}
+                      product={product}
+                      onAddToCart={handleAddToCart}
+                      onAddToWishlist={handleAddToWishlist}
+                    />
                   ))}
                 </div>
               )}

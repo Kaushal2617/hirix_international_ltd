@@ -61,17 +61,18 @@ const CartPage: React.FC = () => {
 
             <div className="flex gap-4">
               {/* Product Image */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+              <Link to={`/product/${item.id}`} className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 block">
                 <img
                   src={item.image || "/placeholder.svg"}
                   alt={item.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
-              </div>
-
+              </Link>
               {/* Product Details */}
               <div>
-                <p className="font-semibold text-black">{item.name}</p>
+                <Link to={`/product/${item.id}`}>
+                  <p className="font-semibold text-black hover:text-red-500 transition">{item.name}</p>
+                </Link>
                 <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                 <p className="font-medium mt-1 text-gray-800">£{item.price?.toFixed(2) ?? '0.00'}</p>
               </div>
@@ -133,7 +134,7 @@ const CartPage: React.FC = () => {
           </div>
 
           {/* Mobile Layout */}
-          <div>
+          <div className="block lg:hidden">
             {/* Cart Summary - Mobile First */}
             <div className="order-1">
               <CartSummary subtotal={subtotal} shippingCost={shippingCost} discount={discount} total={total} />

@@ -141,7 +141,14 @@ export const ProductTable = ({
       });
       return;
     }
-
+    // Ensure images array is always present and does not include the main image
+    const mainImage = editedProduct.image;
+    const additionalImages = (editedProduct.images || []).filter(img => img && img !== mainImage);
+    const productToSave = {
+      ...editedProduct,
+      image: mainImage,
+      images: additionalImages,
+    };
     // Specific validation for required fields
     if (!editedProduct.name || !editedProduct.name.trim()) {
       toast({
@@ -167,16 +174,15 @@ export const ProductTable = ({
       });
       return;
     }
-
     // Wait for update to succeed before closing dialog
-    await onUpdateProduct(editedProduct as AdminProduct);
-      setEditDialogOpen(false);
-      setCurrentProduct(null);
-      setEditedProduct(null);
-      toast({
-        title: "Product updated",
-        description: `${editedProduct.name} has been updated successfully`,
-      });
+    await onUpdateProduct(productToSave as AdminProduct);
+    setEditDialogOpen(false);
+    setCurrentProduct(null);
+    setEditedProduct(null);
+    toast({
+      title: "Product updated",
+      description: `${editedProduct.name} has been updated successfully`,
+    });
   };
 
   const handleApplyDiscount = () => {

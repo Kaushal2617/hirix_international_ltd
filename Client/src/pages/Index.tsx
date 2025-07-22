@@ -5,6 +5,7 @@ import FeaturedProducts from '../components/Home/FeaturedProducts';
 import CategoryGrid from '../components/Home/CategoryGrid';
 import Footer from '../components/shared/Footer';
 import AnimatedProductShowcase from '../components/Home/AnimatedProductShowcase';
+import PromoBanners from '../components/Home/PromoBanners';
 
 const Index = ({ categories = [] }) => {
   return (
@@ -20,6 +21,7 @@ const Index = ({ categories = [] }) => {
         
       </main>
       
+      <PromoBanners />
       <Footer />
     </div>
   );

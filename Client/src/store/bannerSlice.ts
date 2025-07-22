@@ -14,7 +14,11 @@ export const fetchBanners = createAsyncThunk(
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch banners');
-      return data;
+      // Patch: always provide id for banners
+      if (Array.isArray(data)) {
+        return data.map((b) => ({ ...b, id: b._id || b.id }));
+      }
+      return { ...data, id: data._id || data.id };
     } catch (err: any) {
       return rejectWithValue(err.message);
     }

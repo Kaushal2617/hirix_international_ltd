@@ -122,6 +122,10 @@ export const SimpleAddProductForm = ({
     }
   }
 
+  // Derive main and additional image previews
+  const mainImage = formData.image || '';
+  const additionalImages = (additionalImagePreviews || []).filter(img => img && img !== mainImage);
+
   const handleSubmit = () => {
     // Validation
     if (
@@ -130,25 +134,18 @@ export const SimpleAddProductForm = ({
       !formData.category ||
       !formData.price ||
       !formData.material ||
-      !formData.color
+      !formData.color ||
+      !formData.image
     ) {
       toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields (marked with *)",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!mainImagePreview) {
-      toast({
         title: "Missing Product Image",
-        description: "Please upload at least one product image",
+        description: "Please upload a main product image",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+    // Only use images array for additional images; image field is for main image
+    const filteredAdditionalImages = additionalImages.filter(img => img && img !== formData.image);
     const product: SimpleProduct = {
       id: Math.random().toString(36).substring(2, 9),
       sku: formData.sku,
@@ -160,8 +157,8 @@ export const SimpleAddProductForm = ({
       oldPrice: formData.oldPrice || undefined,
       material: formData.material,
       color: formData.color,
-      image: mainImagePreview,
-      images: additionalImagePreviews.length ? additionalImagePreviews : [mainImagePreview],
+      image: formData.image, // main image
+      images: filteredAdditionalImages, // only additional images
       video: formData.video || undefined,
       description: formData.description || undefined,
       details: detailsInput
@@ -178,20 +175,18 @@ export const SimpleAddProductForm = ({
       newArrival: formData.newArrival,
       bestSeller: formData.bestSeller,
       sale: formData.sale,
-      aPlusImage: aPlusImage || undefined,
+      aPlusImage: aPlusImage || undefined, // Ensure aPlusImage is included
       rating: 4.0,
       reviewCount: 0,
-    }
-
-    onAddProduct(product)
-    resetForm()
-    onOpenChange(false)
-
+    };
+    onAddProduct(product);
+    resetForm();
+    onOpenChange(false);
     toast({
       title: "Product Added Successfully!",
       description: `${product.name} has been added to your inventory`,
-    })
-  }
+    });
+  };
 
   const resetForm = () => {
     setFormData({
@@ -454,20 +449,50 @@ export const SimpleAddProductForm = ({
 
           {/* Right Column - Media & Description */}
           <div className="space-y-6">
+            {/* Main Product Image */}
             <div className="bg-orange-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-orange-900 mb-3">Product Images *</h3>
+              <h3 className="font-semibold text-orange-900 mb-3">Main Product Image *</h3>
               <ImageUploader
-                onUpload={() => {}}
-                onMainImageUpload={(url) => setMainImagePreview(url)}
-                onAdditionalImagesUpload={(urls) => setAdditionalImagePreviews([...additionalImagePreviews, ...urls])}
-                onRemoveMainImage={() => setMainImagePreview("")}
-                onRemoveAdditionalImage={(idx) => {
-                  const updated = [...additionalImagePreviews]
-                  updated.splice(idx, 1)
-                  setAdditionalImagePreviews(updated)
+                onMainImageUpload={(url) => {
+                  setMainImagePreview(url);
+                  setFormData(prev => ({
+                    ...prev,
+                    image: url,
+                  }));
                 }}
-                mainImagePreview={mainImagePreview}
-                additionalImagePreviews={additionalImagePreviews}
+                onUpload={() => {}}
+                onAdditionalImagesUpload={() => {}}
+                onRemoveMainImage={() => {
+                  setMainImagePreview("");
+                  setFormData(prev => ({ ...prev, image: "" }));
+                }}
+                onRemoveAdditionalImage={() => {}}
+                mainImagePreview={mainImage}
+                additionalImagePreviews={[]}
+              />
+            </div>
+            {/* Additional Product Images */}
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-orange-900 mb-3">Additional Product Images</h3>
+              <ImageUploader
+                onAdditionalImagesUpload={(urls) => {
+                  setAdditionalImagePreviews(prev => {
+                    const all = Array.from(new Set([...prev, ...urls]));
+                    return all.filter(img => img && img !== mainImage);
+                  });
+                }}
+                onUpload={() => {}}
+                onMainImageUpload={() => {}}
+                onRemoveMainImage={() => {}}
+                onRemoveAdditionalImage={(idx) => {
+                  setAdditionalImagePreviews(prev => {
+                    const updated = [...prev];
+                    updated.splice(idx, 1);
+                    return updated;
+                  });
+                }}
+                mainImagePreview={""}
+                additionalImagePreviews={additionalImages}
               />
             </div>
 

@@ -4,10 +4,11 @@ import SearchBar from './SearchBar';
 import UserMenu from './UserMenu';
 import CategoryMenu from './CategoryMenu';
 import MobileMenu from './MobileMenu';
-import { Menu as MenuIcon, X } from 'lucide-react';
+import { Menu as MenuIcon, X, ShoppingCart, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TypeAnimation } from "react-type-animation";
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector } from 'react-redux';
 
 const Navbar = ({ categories = [] }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -19,6 +20,11 @@ const Navbar = ({ categories = [] }) => {
     firstName = user.firstName || user.name?.split(' ')[0] || '';
   } catch {}
   const isLoggedIn = !!firstName;
+
+  const cartCount = useSelector((state: any) =>
+    state.cart.items.reduce((sum: number, item: any) => sum + item.quantity, 0)
+  );
+  const wishlistCount = useSelector((state: any) => state.wishlist.items.length);
 
   // Prevent background scroll when sidebar is open
   useEffect(() => {
@@ -69,6 +75,24 @@ const Navbar = ({ categories = [] }) => {
             <SearchBar />
           </div>
           <div className="flex items-center space-x-4 sm:space-x-6 min-w-0">
+            {/* Wishlist Icon with Badge */}
+            <Link to="/wishlist" className="relative">
+              <Heart className="w-7 h-7 text-gray-700 hover:text-red-500 transition" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            {/* Cart Icon with Badge */}
+            <Link to="/cart" className="relative">
+              <ShoppingCart className="w-7 h-7 text-gray-700 hover:text-red-500 transition" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             <UserMenu />
           </div>
         </div>

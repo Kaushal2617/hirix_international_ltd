@@ -27,10 +27,10 @@ const ImageUploader = ({ onUpload, onMainImageUpload, onAdditionalImagesUpload, 
         throw new Error('Image upload failed');
       }
       const data = await response.json();
-      if (typeof onUpload === 'function') {
-        onUpload(data.url);
-      } else if (typeof onMainImageUpload === 'function') {
+      if (typeof onMainImageUpload === 'function') {
         onMainImageUpload(data.url, file);
+      } else if (typeof onUpload === 'function') {
+        onUpload(data.url);
       }
     } catch (err) {
       setError(err.message);

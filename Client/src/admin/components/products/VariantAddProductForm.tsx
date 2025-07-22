@@ -252,12 +252,27 @@ export const VariantAddProductForm = ({
   }
 
   // Handle A+ image upload
-  const handleAPlusImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    setAPlusImage(url)
-  }
+  const handleAPlusImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/products/upload-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Image upload failed');
+      const data = await response.json();
+      setAPlusImage(data.url);
+    } catch (err) {
+      toast({ title: 'A+ Image Upload Error', description: (err as Error).message, variant: 'destructive' });
+    }
+  };
 
   const handleRemoveAPlusImage = () => {
     setAPlusImage("")

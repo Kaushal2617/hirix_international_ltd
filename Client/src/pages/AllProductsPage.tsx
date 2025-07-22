@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, SlidersHorizontal } from 'lucide-react';
+import { Star, SlidersHorizontal, Heart, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import ProductFilters from '../components/ProductFilters';
@@ -9,8 +9,12 @@ import { allProducts } from '../data/products';
 import type { Product } from '../data/products';
 import Footer from '../components/shared/Footer'
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchProducts } from '../store/productSlice';
+import { addItem as addToCart } from '../store/cartSlice';
+import { addItem as addToWishlist } from '../store/wishlistSlice';
+import { toast } from '@/components/ui/use-toast';
 import type { RootState } from '../store';
+import ProductCard from '@/components/product/ProductCard';
+import { fetchProducts } from '@/store/productSlice';
 
 const AllProductsPage = () => {
   const dispatch = useDispatch();
@@ -90,6 +94,33 @@ const AllProductsPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products]);
+
+  const getId = (p: any) => (p.id ? p.id.toString() : p._id ? p._id.toString() : '');
+  const handleAddToCart = (product: any) => {
+    const productId = getId(product);
+    dispatch(addToCart({ ...product, id: productId, quantity: 1 }));
+    toast({
+      title: 'Added to Cart',
+      description: `${product.name} has been added to your cart.`
+    });
+  };
+  const handleAddToWishlist = (product: any) => {
+    const productId = getId(product);
+    const exists = (Array.isArray(wishlist) ? wishlist : []).find((item: any) => getId(item) === productId);
+    if (exists) {
+      toast({
+        title: 'Already in Wishlist',
+        description: `${product.name} is already in your wishlist.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    dispatch(addToWishlist({ ...product, id: productId, inStock: product.inventory > 0 }));
+    toast({
+      title: 'Added to Wishlist',
+      description: `${product.name} has been added to your wishlist.`
+    });
+  };
 
   // Only after all hooks:
   if (loading) {
@@ -185,47 +216,12 @@ const AllProductsPage = () => {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredProducts.map((product: any) => (
-                      <Link to={`/product/${product._id || product.id}`} key={product._id || product.id}>
-                        <Card className="group overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                          <div className="relative overflow-hidden">
-                            <img
-                              src={getProductImage(product.image)}
-                              alt={product.name}
-                              className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={e => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
-                            />
-                            {product.oldPrice && (
-                              <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 text-xs font-semibold rounded">
-                                {Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}% OFF
-                              </div>
-                            )}
-                          </div>
-                          <CardContent className="p-4">
-                            <div className="text-sm text-gray-500 mb-1">{product.category}</div>
-                            <h3 className="font-medium text-sm mb-2 line-clamp-2 h-10">{product.name}</h3>
-                            <div className="flex items-center mb-2">
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    size={14}
-                                    fill={i < Math.floor(product.rating) ? "#FFC107" : "none"}
-                                    stroke={i < Math.floor(product.rating) ? "#FFC107" : "#D1D5DB"}
-                                    className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-xs text-gray-500 ml-1">({product.reviewCount})</span>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="text-lg font-bold text-red-500">£{product.price.toFixed(2)}</span>
-                              {product.oldPrice && (
-                                <span className="ml-2 text-sm text-gray-500 line-through">£{product.oldPrice.toFixed(2)}</span>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
+                      <ProductCard
+                        key={product._id || product.id}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                        onAddToWishlist={handleAddToWishlist}
+                      />
                     ))}
                   </div>
                 </>

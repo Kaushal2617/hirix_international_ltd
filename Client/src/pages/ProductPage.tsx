@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import Footer from "../components/shared/Footer"
+import React, { useState, useEffect } from 'react';
+import Footer from "../components/shared/Footer";
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { motion } from 'framer-motion';
 import { fetchProducts } from '@/store/productSlice';
 import type { AppDispatch } from '@/store';
+import ReviewDialog from '@/components/orders/ReviewDialog';
 
 const ProductPage = () => {
   const { productId } = useParams();
@@ -22,6 +23,11 @@ const ProductPage = () => {
   const product = products.find((p: any) => (p._id || p.id)?.toString() === productId);
   const dispatch = useDispatch<AppDispatch>();
   const [activeTab, setActiveTab] = useState('description');
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState(null);
+  const { user } = useSelector((state: any) => state.auth);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
   // Variant selection state
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
@@ -34,23 +40,41 @@ const ProductPage = () => {
   const getUnique = (arr: any[], key: string) => Array.from(new Set(arr.map(item => item[key])));
 
   // When product changes, reset variant selection
-  React.useEffect(() => {
+  useEffect(() => {
     if (hasVariants) {
       setSelectedVariantId(product.variants[0].id);
     }
   }, [productId]);
 
-  React.useEffect(() => {
-    console.log('ProductPage products:', products);
-    console.log('ProductPage loading:', loading);
-    console.log('ProductPage error:', error);
-    console.log('ProductPage productId:', productId);
-    console.log('ProductPage found product:', product);
-  }, [products, loading, error, productId]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch, productId]);
+
+  useEffect(() => {
+    if (!productId) return;
+    setReviewsLoading(true);
+    setReviewsError(null);
+    fetch(`/api/reviews?productId=${productId}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch reviews');
+        return res.json();
+      })
+      .then(data => {
+        setReviews(data);
+        setReviewsLoading(false);
+      })
+      .catch(err => {
+        setReviewsError(err.message);
+        setReviewsLoading(false);
+      });
+  }, [productId]);
+
+  // Calculate average rating and review count from reviews
+  const reviewCount = reviews.length;
+  const averageRating =
+    reviewCount > 0
+      ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount).toFixed(1)
+      : (product?.rating || 0).toFixed(1);
 
   if (loading) {
     return (
@@ -96,7 +120,6 @@ const ProductPage = () => {
         console.error('Error sharing:', error);
       }
     } else {
-      // Fallback for browsers that don't support Web Share API
       navigator.clipboard.writeText(window.location.href)
         .then(() => {
           toast({
@@ -117,10 +140,8 @@ const ProductPage = () => {
     }
   };
 
-  // Use variant data if selected, else product data
   const display = hasVariants && selectedVariant ? selectedVariant : product;
 
-  // Add to Cart handler
   const handleAddToCart = () => {
     if (!display) return;
     dispatch(addToCart({
@@ -138,7 +159,6 @@ const ProductPage = () => {
     });
   };
 
-  // Add to Wishlist handler
   const handleAddToWishlist = () => {
     if (!display) return;
     dispatch(addToWishlist({
@@ -155,6 +175,13 @@ const ProductPage = () => {
     });
   };
 
+  // Only show main image first, then additional images that are not the main image
+  const images = [
+    product.image,
+    ...(product.images || []).filter(img => img && img !== product.image)
+  ].filter(Boolean);
+
+console.log("lund "+images.length)
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
@@ -163,7 +190,7 @@ const ProductPage = () => {
           <div className="mb-6 text-sm">
             <Link to="/" className="text-gray-500 hover:text-red-500">Home</Link>
             <span className="mx-2 text-gray-400">/</span>
-            <Link to={`/category/${product?.category.toLowerCase()}`} className="text-gray-500 hover:text-red-500">{product?.category}</Link>
+            <Link to={`/category/${product?.category?.toLowerCase()}`} className="text-gray-500 hover:text-red-500">{product?.category}</Link>
             <span className="mx-2 text-gray-400">/</span>
             <span className="text-gray-700">{product?.name}</span>
           </div>
@@ -178,8 +205,8 @@ const ProductPage = () => {
               >
               <ProductGallery 
                 productName={product.name}
-                mainImage={display.images ? display.images[0] : (product.image || (product.images ? product.images[0] : undefined))}
-                images={display.images || (product.images || [product.image])}
+                mainImage={images[0]}
+                images={images}
                 video={product.video}
               />
               </motion.div>
@@ -188,7 +215,7 @@ const ProductPage = () => {
             {/* Product Details */}
             <div className="md:w-3/5">
               <div className="mb-2">
-                <Link to={`/category/${product?.category.toLowerCase()}`} className="text-sm text-gray-500 hover:text-red-500">
+                <Link to={`/category/${product?.category?.toLowerCase()}`} className="text-sm text-gray-500 hover:text-red-500">
                   {product?.category}
                 </Link>
               </div>
@@ -518,33 +545,26 @@ const ProductPage = () => {
               )}
             </motion.div>
           </div>
-          
-          {/* A+ Content Section (Amazon-style Enhanced Content) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mb-12"
-          >
-            {/* Large Branded Banner with Overlay - match hero banner size */}
-            <div className="relative w-full max-w-[1400px] mx-auto px-4 mb-8">
-            <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden rounded-2xl">
-              <img
-                src="/images/banner1.jpeg" // ✅ remove `/public` prefix if using Vite/React
-                alt="A+ Banner"
-                className="w-full h-full object-contain object-center transition-transform duration-300"
-              />
 
-              {/* Optional Text Overlay */}
-              {/* 
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <span className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-lg text-center">
-                  Hirix Premium Quality
-                </span>
-              </div> 
-              */}
-            </div>
-          </div>
+          {/* A+ Content Section (Amazon-style Enhanced Content) */}
+          {product.aPlusImage && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mb-12"
+            >
+              <div className="relative w-full max-w-[1400px] mx-auto px-4 mb-8">
+                <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden rounded-2xl">
+                  <img
+                    src={product.aPlusImage}
+                    alt="A+ Banner"
+                    className="w-full h-full object-contain object-center transition-transform duration-300"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
 
 
             {/* Feature Cards Row */}
@@ -595,7 +615,7 @@ const ProductPage = () => {
                 At Hirix, we are committed to delivering premium quality, modern design, and exceptional customer service. Our products are crafted with care and backed by a 1-year warranty and hassle-free returns. Shop with confidence and elevate your space with Hirix.
               </p>
             </motion.div>
-          </motion.div>
+          
           
           {/* Reviews Section (moved below A+ Content) */}
           <motion.div
@@ -603,151 +623,94 @@ const ProductPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-12"
           >
-                  <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="md:w-1/3">
-                <div className="text-center p-6 border rounded-lg bg-white mb-4">
-                        <div className="text-4xl font-bold mb-2">{product.rating}</div>
-                        <div className="flex justify-center mb-2">
-                          {[...Array(5)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: i * 0.1 }}
-                      >
+            <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
+            {user && (
+              <Button className="mb-4 bg-red-500 hover:bg-red-600 text-white" onClick={() => { console.log('Open review dialog'); setReviewDialogOpen(true); }}>
+                Write a Review
+              </Button>
+            )}
+            {reviewsLoading ? (
+              <div className="text-gray-500">Loading reviews...</div>
+            ) : reviewsError ? (
+              <div className="text-red-500">{reviewsError}</div>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="md:w-1/3">
+                  <div className="text-center p-6 border rounded-lg bg-white mb-4">
+                    <div className="text-4xl font-bold mb-2">{averageRating}</div>
+                    <div className="flex justify-center mb-2">
+                      {[...Array(5)].map((_, i) => (
                         <motion.div
+                          key={i}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.5, delay: i * 0.1 }}
                         >
-                            <Star
-                              size={18}
-                              fill={i < Math.floor(product?.rating || 0) ? "#FFC107" : "none"}
-                              stroke={i < Math.floor(product?.rating || 0) ? "#FFC107" : "#D1D5DB"}
-                            />
+                          <Star
+                            size={18}
+                            fill={i < Math.round(averageRating) ? "#FFC107" : "none"}
+                            stroke={i < Math.round(averageRating) ? "#FFC107" : "#D1D5DB"}
+                          />
                         </motion.div>
-                      </motion.div>
-                    ))}
-                  </div>
-                  <div className="text-sm text-gray-500 mb-2">Based on {product.reviewCount} reviews</div>
-                  {/* Star breakdown (mocked) */}
-                  <div className="mb-2">
-                    {[5,4,3,2,1].map(star => (
-                      <motion.div
-                        key={star}
-                        className="flex items-center text-xs text-gray-500 mb-1"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: star * 0.1 }}
-                      >
-                        <span className="w-8">{star} star</span>
-                        <div className="flex-1 mx-2 bg-gray-200 rounded h-2">
-                          <div className="bg-yellow-400 h-2 rounded" style={{width: `${star*15}%`}}></div>
-                        </div>
-                        <span>{star*3}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <Button className="w-full bg-red-500 hover:bg-red-600 text-white mt-2">Write a Review</Button>
-                  </motion.div>
-                      </div>
+                      ))}
                     </div>
-                    <div className="md:w-2/3">
-                {/* Sample reviews with avatars */}
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="review-1">
+                    <div className="text-sm text-gray-500 mb-2">Based on {reviewCount} review{reviewCount !== 1 ? 's' : ''}</div>
+                    {/* Star breakdown (optional, can be implemented later) */}
+                  </div>
+                </div>
+                <div className="md:w-2/3">
+                  {reviewCount === 0 ? (
+                    <div className="text-gray-500">No reviews yet. Be the first to review this product!</div>
+                  ) : (
+                    <Accordion type="single" collapsible className="w-full">
+                      {reviews.map((review, idx) => (
+                        <AccordionItem value={`review-${idx}`} key={review._id || idx}>
                           <AccordionTrigger className="text-left">
-                      <div className="flex items-center gap-3">
-                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah J." className="w-8 h-8 rounded-full" />
-                            <div>
-                              <div className="flex items-center">
-                                <div className="flex mr-2">
-                                  {[...Array(5)].map((_, i) => (
-                                <motion.div
-                                  key={i}
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                                >
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: i * 0.1 }}
-                                  >
-                                    <Star
-                                      size={14}
-                                      fill={i < 4 ? "#FFC107" : "none"}
-                                      stroke={i < 4 ? "#FFC107" : "#D1D5DB"}
-                                    />
-                                  </motion.div>
-                                </motion.div>
-                                  ))}
+                            <div className="flex items-center gap-3">
+                              {/* Placeholder avatar, can be replaced with user info if available */}
+                              <img src={`https://api.dicebear.com/7.x/initials/svg?seed=User${idx+1}`} alt="User" className="w-8 h-8 rounded-full" />
+                              <div>
+                                <div className="flex items-center">
+                                  <div className="flex mr-2">
+                                    {[...Array(5)].map((_, i) => (
+                                      <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: i * 0.1 }}
+                                      >
+                                        <Star
+                                          size={14}
+                                          fill={i < review.rating ? "#FFC107" : "none"}
+                                          stroke={i < review.rating ? "#FFC107" : "#D1D5DB"}
+                                        />
+                                      </motion.div>
+                                    ))}
+                                  </div>
+                                  <span className="font-medium">{review.comment?.slice(0, 30) || 'Review'}</span>
                                 </div>
-                                <span className="font-medium">Great quality product</span>
+                                {/* Optionally show user name and date if available */}
                               </div>
-                          <div className="text-xs text-gray-500 mt-1">By Sarah J. - 3 weeks ago</div>
-                        </div>
                             </div>
                           </AccordionTrigger>
                           <AccordionContent>
-                            <p className="text-gray-700">
-                              Absolutely love this product! The quality exceeds my expectations, and it looks 
-                              even better in person than in the photos. Assembly was straightforward, and 
-                              it fits perfectly in my space. Would definitely recommend to others.
-                            </p>
-                          </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="review-2">
-                          <AccordionTrigger className="text-left">
-                      <div className="flex items-center gap-3">
-                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael T." className="w-8 h-8 rounded-full" />
-                            <div>
-                              <div className="flex items-center">
-                                <div className="flex mr-2">
-                                  {[...Array(5)].map((_, i) => (
-                                <motion.div
-                                  key={i}
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                                >
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: i * 0.1 }}
-                                  >
-                                    <Star
-                                      size={14}
-                                      fill={i < 5 ? "#FFC107" : "none"}
-                                      stroke={i < 5 ? "#FFC107" : "#D1D5DB"}
-                                    />
-                                  </motion.div>
-                                </motion.div>
-                                  ))}
-                                </div>
-                                <span className="font-medium">Excellent purchase</span>
+                            <p className="text-gray-700">{review.comment}</p>
+                            {/* Optionally show review images if available */}
+                            {review.images && review.images.length > 0 && (
+                              <div className="flex gap-2 mt-2">
+                                {review.images.map((img, i) => (
+                                  <img key={i} src={img} alt={`Review image ${i+1}`} className="w-16 h-16 object-cover rounded" />
+                                ))}
                               </div>
-                          <div className="text-xs text-gray-500 mt-1">By Michael T. - 2 months ago</div>
-                        </div>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <p className="text-gray-700">
-                              This is exactly what I was looking for. The material feels durable and 
-                              high-quality. Delivery was prompt and packaging was secure. Very happy 
-                              with my purchase and would buy from this brand again.
-                            </p>
+                            )}
                           </AccordionContent>
                         </AccordionItem>
-                      </Accordion>
-                    </div>
-                  </div>
+                      ))}
+                    </Accordion>
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
           
           {/* Related Products */}
@@ -820,8 +783,31 @@ const ProductPage = () => {
           </motion.div>
         </div>
       </main>
-      
       <Footer/>
+      <ReviewDialog
+        open={reviewDialogOpen}
+        onClose={() => setReviewDialogOpen(false)}
+        productId={product._id || product.id}
+        userId={user?.id}
+        onReviewSubmitted={() => {
+          setReviewDialogOpen(false);
+          setReviewsLoading(true);
+          setReviewsError(null);
+          fetch(`/api/reviews?productId=${product._id || product.id}`)
+            .then(res => {
+              if (!res.ok) throw new Error('Failed to fetch reviews');
+              return res.json();
+            })
+            .then(data => {
+              setReviews(data);
+              setReviewsLoading(false);
+            })
+            .catch(err => {
+              setReviewsError(err.message);
+              setReviewsLoading(false);
+            });
+        }}
+      />
     </div>
   );
 };

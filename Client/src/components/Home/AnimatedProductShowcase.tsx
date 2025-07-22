@@ -40,8 +40,15 @@ const displayDuration = 3
 const AnimatedProductShowcase = () => {
   const dispatch = useDispatch();
   const { banners, loading } = useSelector((state: any) => state.banners);
-  const showcaseCategories = banners.filter((b: any) => b.type === 'mini' && b.imageUrl);
+  const showcaseCategories = banners.filter((b: any) => b.type === 'mini' && b.imageUrl)
+    .map((b: any) => ({
+      id: b.id || b._id,
+      title: b.title || '',
+      image: b.imageUrl,
+      link: b.link || '/',
+    }));
   const categoriesToShow = showcaseCategories.length > 0 ? showcaseCategories : fallbackShowcaseCategories;
+  console.log('AnimatedProductShowcase categoriesToShow:', categoriesToShow);
   const [leftIdx, setLeftIdx] = useState(0)
   const [rightIdx, setRightIdx] = useState(1)
   const [mobileIdx, setMobileIdx] = useState(0)

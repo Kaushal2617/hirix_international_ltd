@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchBanners, addBanner } from '@/store/bannerSlice';
+import { fetchBanners, addBanner, updateBanner, deleteBanner } from '@/store/bannerSlice';
 import { useEffect } from 'react';
 
 const BannerImageUploader = ({ onUpload }) => {
@@ -56,7 +56,13 @@ const BannerImageUploader = ({ onUpload }) => {
 
 const AdminBanners: React.FC = () => {
   const dispatch = useDispatch();
-  const { banners, loading, error } = useSelector((state: any) => state.banners);
+  const bannersState = useSelector((state: any) => state.banners);
+  const { loading, error } = bannersState;
+  const [localBanners, setLocalBanners] = useState<Banner[]>([]);
+
+  useEffect(() => {
+    setLocalBanners(bannersState.banners);
+  }, [bannersState.banners]);
   const { categories, loading: categoriesLoading } = useSelector((state: any) => state.categories);
   const [tab, setTab] = useState<'hero' | 'mini'>('hero');
   // Shared dialog state
@@ -125,7 +131,36 @@ const AdminBanners: React.FC = () => {
     }
   };
 
-  // Edit and delete handlers can be implemented similarly using backend endpoints if needed
+  // Edit handler
+  const handleEditClick = (banner: Banner) => {
+    setEditBanner(banner);
+    setDialogOpen(true);
+    if (banner.type === 'hero') {
+      setTab('hero');
+      setHeroImageUrl(banner.imageUrl || '');
+      setHeroMobileImageUrl(banner.mobileImageUrl || '');
+      setHeroCategory(banner.category || '');
+    } else {
+      setTab('mini');
+      setMiniImageUrl(banner.imageUrl || '');
+      setMiniMobileImageUrl(banner.mobileImageUrl || '');
+      setMiniTitle(banner.title || '');
+      setMiniLink(banner.link || '/best-sellers');
+      setHeroCategory(banner.category || '');
+    }
+  };
+
+  // Delete handler
+  const handleDeleteClick = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this banner?')) return;
+    try {
+      await dispatch(deleteBanner(id) as any).unwrap();
+      setLocalBanners(prev => prev.filter(b => b.id !== id));
+      toast({ title: 'Banner deleted', description: 'Banner has been deleted.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to delete banner', variant: 'destructive' });
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto py-10">
@@ -150,21 +185,28 @@ const AdminBanners: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {banners.filter(b => b.type === 'hero').length === 0 && (
+                {localBanners.filter(b => b.type === 'hero').length === 0 && (
                   <tr><td colSpan={3} className="text-center py-6 text-gray-400">No hero banners added yet.</td></tr>
                 )}
-                {banners.filter(b => b.type === 'hero').map(banner => (
-                  <tr key={banner.id} className="border-t">
-                    <td className="py-2">
-                      <img src={banner.imageUrl} alt="Banner" className="w-32 h-16 object-cover rounded" />
-                    </td>
-                    <td className="py-2">{banner.category}</td>
-                    <td className="py-2 space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEditClick(banner)}>Edit</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDeleteClick(banner.id)}>Delete</Button>
-                    </td>
-                  </tr>
-                ))}
+                {localBanners.filter(b => b.type === 'hero').length === 0 && (
+                  <tr><td colSpan={3} className="text-center py-6 text-gray-400">No hero banners added yet.</td></tr>
+                )}
+                {localBanners.filter(b => b.type === 'hero').map((banner, idx) => {
+                  const key = banner.id || idx;
+                  const bannerId = banner.id;
+                  return (
+                    <tr key={key} className="border-t">
+                      <td className="py-2">
+                        <img src={banner.imageUrl} alt="Banner" className="w-32 h-16 object-cover rounded" />
+                      </td>
+                      <td className="py-2">{banner.category}</td>
+                      <td className="py-2 space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEditClick(banner)}>Edit</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(banner.id)}>Delete</Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -185,22 +227,29 @@ const AdminBanners: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {banners.filter(b => b.type === 'mini').length === 0 && (
+                {localBanners.filter(b => b.type === 'mini').length === 0 && (
                   <tr><td colSpan={4} className="text-center py-6 text-gray-400">No mini banners added yet.</td></tr>
                 )}
-                {banners.filter(b => b.type === 'mini').map(banner => (
-                  <tr key={banner.id} className="border-t">
-                    <td className="py-2">
-                      <img src={banner.imageUrl} alt="Mini Banner" className="w-32 h-16 object-cover rounded" />
-                    </td>
-                    <td className="py-2">{banner.title}</td>
-                    <td className="py-2">{banner.link}</td>
-                    <td className="py-2 space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEditClick(banner)}>Edit</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDeleteClick(banner.id)}>Delete</Button>
-                    </td>
-                  </tr>
-                ))}
+                {localBanners.filter(b => b.type === 'mini').length === 0 && (
+                  <tr><td colSpan={4} className="text-center py-6 text-gray-400">No mini banners added yet.</td></tr>
+                )}
+                {localBanners.filter(b => b.type === 'mini').map((banner, idx) => {
+                  const key = banner.id || idx;
+                  const bannerId = banner.id;
+                  return (
+                    <tr key={key} className="border-t">
+                      <td className="py-2">
+                        <img src={banner.imageUrl} alt="Mini Banner" className="w-32 h-16 object-cover rounded" />
+                      </td>
+                      <td className="py-2">{banner.title}</td>
+                      <td className="py-2">{banner.link}</td>
+                      <td className="py-2 space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEditClick(banner)}>Edit</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(banner.id)}>Delete</Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

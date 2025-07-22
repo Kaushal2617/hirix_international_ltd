@@ -13,10 +13,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Star, Image, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useSelector } from 'react-redux';
 
 interface ReviewDialogProps {
   open: boolean;
   onClose: () => void;
+  productId: string;
+  userId: string;
+  onReviewSubmitted?: () => void;
   orderItem?: {
     id: number;
     name: string;
@@ -26,14 +30,13 @@ interface ReviewDialogProps {
   };
 }
 
-const ReviewDialog: React.FC<ReviewDialogProps> = ({ open, onClose, orderItem }) => {
+const ReviewDialog: React.FC<ReviewDialogProps> = ({ open, onClose, productId, userId, onReviewSubmitted, orderItem }) => {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!orderItem) return null;
+  const token = useSelector((state: any) => state.auth.token);
 
   const handleRatingChange = (newRating: number) => {
     setRating(newRating);
@@ -83,25 +86,54 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({ open, onClose, orderItem })
       });
       return;
     }
-
+    if (!token) {
+      toast({
+        title: "Not logged in",
+        description: "You must be logged in to submit a review.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // For now, images are not uploaded, just send empty array or URLs if you have upload logic
+      const reviewPayload = {
+        productId,
+        userId,
+        rating,
+        comment: review,
+        images: [], // TODO: handle image upload if needed
+      };
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(reviewPayload),
+      });
+      if (!res.ok) throw new Error('Failed to submit review');
       toast({
         title: "Review submitted",
         description: "Thank you for your feedback!",
       });
       setIsSubmitting(false);
       onClose();
-
+      if (onReviewSubmitted) onReviewSubmitted();
       // Clean up object URLs
       imageUrls.forEach(url => URL.revokeObjectURL(url));
-    }, 1000);
+    } catch (err) {
+      setIsSubmitting(false);
+      toast({
+        title: "Submission failed",
+        description: (err as Error).message || 'Could not submit review',
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={open => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[500px]" aria-describedby="review-dialog-desc">
         <DialogDescription id="review-dialog-desc">Review dialog content.</DialogDescription>
         <DialogHeader>
@@ -110,17 +142,17 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({ open, onClose, orderItem })
             Share your experience with this product
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="flex items-start gap-4 py-4">
-          <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-            <img src={orderItem.image} alt={orderItem.name} className="w-full h-full object-cover" />
+        {orderItem ? (
+          <div className="flex items-start gap-4 py-4">
+            <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+              <img src={orderItem.image} alt={orderItem.name} className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h3 className="font-medium">{orderItem.name}</h3>
+              <p className="text-sm text-gray-500">Price: ${orderItem.price.toFixed(2)}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-medium">{orderItem.name}</h3>
-            <p className="text-sm text-gray-500">Price: ${orderItem.price.toFixed(2)}</p>
-          </div>
-        </div>
-
+        ) : null}
         <div className="space-y-4">
           <div>
             <Label htmlFor="rating">Your Rating</Label>

@@ -1,9 +1,15 @@
 import { Request, Response } from 'express';
 import { Review } from '../models/Review';
+import mongoose from 'mongoose';
 
 export const getAllReviews = async (req: Request, res: Response) => {
   try {
-    const reviews = await Review.find();
+    const { productId } = req.query;
+    let filter = {};
+    if (productId) {
+      filter = { productId: new mongoose.Types.ObjectId(productId as string) };
+    }
+    const reviews = await Review.find(filter);
     res.json(reviews);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch reviews' });

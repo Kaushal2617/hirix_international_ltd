@@ -42,22 +42,25 @@ const ProductGallery = ({
   // Get current color variant or use default
   const currentVariant = colorVariants.find((variant) => variant.color === selectedColor)
   const currentMainImage = currentVariant?.mainImage || mainImage
+  //console.log("images "+currentVariant.images.length)
+  
+
   const currentImages = currentVariant?.images || images
   const currentVideo = currentVariant?.video || video
 
   // Combine main image with additional images and video
   const allMedia = [
-    { type: "image", src: currentMainImage, alt: `${productName} - ${selectedColor || "Default"}` },
+    // { type: "image", src: currentMainImage, alt: `${productName} - ${selectedColor || "Default"}` },
     ...currentImages.map((img, index) => ({
       type: "image" as const,
       src: img,
-      alt: `${productName} - ${selectedColor || "Default"} - Image ${index + 2}`,
+      alt: `${productName} - ${selectedColor || "Default"} - Image ${index + 1}`,
     })),
-    ...(currentVideo
-      ? [{ type: "video" as const, src: currentVideo, alt: `${productName} - ${selectedColor || "Default"} - Video` }]
-      : []),
+    // ...(currentVideo
+    //   ? [{ type: "video" as const, src: currentVideo, alt: `${productName} - ${selectedColor || "Default"} - Video` }]
+    //   : []),
   ]
-
+console.log("images lund "+allMedia.length)
   // Reset selected image when color changes
   useEffect(() => {
     setSelectedImage(0)
@@ -167,7 +170,7 @@ const ProductGallery = ({
           </AnimatePresence>
 
           {/* Image Counter */}
-          {allMedia.length > 1 && (
+          {allMedia.length > 0 && (
             <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
               {selectedImage + 1} / {allMedia.length}
             </div>
@@ -175,7 +178,7 @@ const ProductGallery = ({
         </div>
 
         {/* Thumbnail Scrollable Row */}
-        {allMedia.length > 1 && (
+        {allMedia.length > 0 && (
           <div className="relative">
             {/* Left Scroll Button */}
             <button

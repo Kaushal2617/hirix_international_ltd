@@ -1,11 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Truck, Shield, Clock, Star, RefreshCw } from 'lucide-react';
+import { ArrowRight, Truck, Shield, Clock, Star, RefreshCw, ShoppingCart, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { allProducts } from '../../data/products';
 import { useSelector, useDispatch } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { fetchProducts } from '@/store/productSlice';
 import { fetchBanners } from '@/store/bannerSlice';
-import { useEffect } from 'react';
+import ProductCard from '@/components/product/ProductCard';
+import { addItem as addToCart } from '@/store/cartSlice';
+import { addItem as addToWishlist } from '@/store/wishlistSlice';
+import { toast } from '@/components/ui/use-toast';
 
 const promoItems = [
   {
@@ -38,64 +43,78 @@ const promoItems = [
   }
 ];
 
-const bestSellers = allProducts.slice(0, 4);
-
-const fallbackMiniImage = 'https://placehold.co/400x200/EEE/31343C?text=Mini+Banner';
-
 const PromoBanners = () => {
   const dispatch = useDispatch();
-  const { banners, loading } = useSelector((state: any) => state.banners);
+  const bannerState = useSelector((state: any) => state.banners);
+  const { banners, loading, error } = bannerState;
+  const { products } = useSelector((state: any) => state.products);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const miniBanners = banners.filter((b: any) => b.type === 'mini' && b.imageUrl);
+  const wishlist = useSelector((state: any) => state.wishlist.items);
+
+  const getId = (p: any) => (p.id ? p.id.toString() : p._id ? p._id.toString() : '');
+  const handleAddToCart = (product: any) => {
+    const productId = getId(product);
+    dispatch(addToCart({ ...product, id: productId, quantity: 1 }));
+    toast({
+      title: 'Added to Cart',
+      description: `${product.name} has been added to your cart.`
+    });
+  };
+
+  const handleAddToWishlist = (product: any) => {
+    const productId = getId(product);
+    const exists = wishlist.find((item: any) => getId(item) === productId);
+    if (exists) {
+      toast({
+        title: 'Already in Wishlist',
+        description: `${product.name} is already in your wishlist.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    dispatch(addToWishlist({ ...product, id: productId, inStock: product.inventory > 0 }));
+    toast({
+      title: 'Added to Wishlist',
+      description: `${product.name} has been added to your wishlist.`
+    });
+  };
+  console.log('--- PromoBanners Render ---');
+  console.log('PromoBanners full bannerState:', bannerState);
+  console.log('PromoBanners banners:', banners);
+  console.log('PromoBanners miniBanners:', miniBanners);
+  console.log('PromoBanners loading:', loading);
+  console.log('PromoBanners error:', error);
   useEffect(() => {
-    if (!banners.length) dispatch(fetchBanners() as any);
+    if (!banners.length) {
+      console.log('Dispatching fetchBanners...');
+      dispatch(fetchBanners() as any);
+    }
   }, [dispatch, banners.length]);
+  useEffect(() => {
+    setReviewsLoading(true);
+    fetch('/api/reviews')
+      .then(res => res.json())
+      .then(data => {
+        setReviews(data);
+        setReviewsLoading(false);
+      })
+      .catch(() => setReviewsLoading(false));
+  }, []);
+  const bestSellers = products.filter((p: any) => p.bestSeller).slice(0, 4);
+  // Helper to get dynamic review data
+  const getReviewStats = (productId: string) => {
+    const productReviews = reviews.filter(r => (r.productId === productId || r.productId === String(productId)));
+    const reviewCount = productReviews.length;
+    const averageRating = reviewCount > 0 ? productReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount : 0;
+    return { reviewCount, averageRating };
+  };
 
   return (
     <section className="py-10">
       <div className="container mx-auto px-4">
-        {/* Discover More Mini Banners */}
-        {loading ? (
-          <div className="h-32 flex items-center justify-center text-gray-500">Loading banners...</div>
-        ) : miniBanners.length > 1 && (
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <ArrowRight className="w-6 h-6 text-red-400" /> Discover More
-            </h2>
-            <div className="grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {miniBanners.map((banner, idx) => (
-                <Link
-                  key={banner.id}
-                  to={banner.link || "/best-sellers"}
-                  className="group block rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300 border-2 border-dashed border-gray-300 bg-gray-100"
-                >
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: idx * 0.1 }}
-                    viewport={{ once: true }}
-                  >
-                    <picture>
-                      {banner.mobileImageUrl && (
-                        <source srcSet={banner.mobileImageUrl} media="(max-width: 768px)" />
-                      )}
-                      <img
-                        src={banner.imageUrl || fallbackMiniImage}
-                        alt={banner.title || 'Mini Banner'}
-                        className="w-full h-24 xs:h-32 sm:h-40 object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                        onError={e => { (e.target as HTMLImageElement).src = fallbackMiniImage; }}
-                      />
-                    </picture>
-                    {banner.title && banner.imageUrl && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-center py-2 text-sm font-semibold">
-                        {banner.title}
-                      </div>
-                    )}
-                  </motion.div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Mini Banners Section removed as requested */}
         {/* Feature cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {promoItems.map((item, idx) => (
@@ -122,30 +141,20 @@ const PromoBanners = () => {
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <Star className="w-6 h-6 text-yellow-400" /> Best Sellers
           </h2>
+          {reviewsLoading ? (
+            <div className="text-center text-gray-500">Loading...</div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {bestSellers.map((product, idx) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                className="group"
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  viewport={{ once: true }}
-                  className="bg-white rounded-xl shadow hover:shadow-xl transition-all duration-300 flex flex-col items-center p-4 h-full min-h-[320px] justify-between cursor-pointer"
-                >
-                  <img src={product.image} alt={product.name} className="w-full h-44 object-cover mb-4 rounded-xl shadow-md border border-gray-100" />
-                  <h3 className="text-base font-semibold mb-1 text-center">{product.name}</h3>
-                  <div className="text-lg font-bold text-red-600 mb-3">£{product.price.toFixed(2)}</div>
-                  <button className="w-full px-4 py-2 bg-red-600 text-white rounded-full font-medium hover:bg-red-700 transition-all duration-200 shadow" type="button">
-                    Shop Now
-                  </button>
-                </motion.div>
-              </Link>
+            {bestSellers.map((product: any, idx: number) => (
+              <ProductCard
+                key={product._id || product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+                onAddToWishlist={handleAddToWishlist}
+              />
             ))}
           </div>
+          )}
           {/* Explore More Button */}
           <div className="flex justify-center mt-8">
             <a

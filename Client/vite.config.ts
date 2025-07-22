@@ -11,7 +11,9 @@ export default defineConfig({
     },
   },
   plugins: [
-    react()
+    react({
+      jsxImportSource: "react"  // ✅ necessary for SWC + React 17+
+    })
   ],
   resolve: {
     alias: {
