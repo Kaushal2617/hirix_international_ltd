@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Product } from '../models/Product';
 import mongoose from 'mongoose';
+import { Category } from '../models/Category';
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
@@ -74,5 +75,43 @@ export const getAllProductsAdmin = async (req: Request, res: Response) => {
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
+  }
+};
+
+export const getSearchSuggestions = async (req: Request, res: Response) => {
+  try {
+    const query = req.query.query || '';
+    if (!query || typeof query !== 'string' || !query.trim()) {
+      return res.json([]);
+    }
+    // Search categories
+    const categories = await Category.find({ name: { $regex: query, $options: 'i' } });
+    // Search subcategories (embedded in categories)
+    const subcategories = await Category.aggregate([
+      { $unwind: '$subcategories' },
+      { $match: { 'subcategories.name': { $regex: query, $options: 'i' } } },
+      { $replaceRoot: { newRoot: '$subcategories' } }
+    ]);
+    // Search products
+    const products = await Product.find({ name: { $regex: query, $options: 'i' } });
+
+    const suggestions = [
+      ...categories.map(cat => ({ type: 'category', name: cat.name, slug: cat.slug })),
+      ...subcategories.map(sub => ({ type: 'subcategory', name: sub.name, slug: sub.slug })),
+      // ...products.map(prod => ({ type: 'product', name: prod.name, slug: prod.slug })),
+    ];
+    res.json(suggestions);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch search suggestions' });
+  }
+};
+
+export const getProductBySlug = async (req: Request, res: Response) => {
+  try {
+    const product = await Product.findOne({ slug: req.params.slug });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch product' });
   }
 }; 

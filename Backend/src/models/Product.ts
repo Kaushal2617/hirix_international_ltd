@@ -36,6 +36,7 @@ const VariantSchema = new Schema<Variant>(
 export interface ProductDocument extends Document {
   name: string;
   sku: string;
+  slug: string;
   image: string;
   images?: string[];
   video?: string;
@@ -69,6 +70,7 @@ const ProductSchema = new Schema<ProductDocument>(
   {
     name: { type: String, required: true },
     sku: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     image: { type: String, required: true },
     images: [String],
     video: String,

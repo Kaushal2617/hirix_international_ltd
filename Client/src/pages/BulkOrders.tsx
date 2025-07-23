@@ -12,7 +12,7 @@ const  BulkOrders = () => {
         <h1 className="text-3xl font-bold mb-8  ">Bulk Order Discounts</h1>
         <div className="max-w-3xl mx-auto space-y-8">
           <section>
-            <p >At HirixDirect, we value all our customers, whether you're shopping for personal use or representing a business or organization. To show our appreciation and make your shopping experience even more rewarding, we offer exclusive Bulk Order Discounts for those looking to purchase in larger quantities.</p>
+            <p >At Homnix, we value all our customers, whether you're shopping for personal use or representing a business or organization. To show our appreciation and make your shopping experience even more rewarding, we offer exclusive Bulk Order Discounts for those looking to purchase in larger quantities.</p>
             <div className="space-y-4">
               <br/>
               <h2 className="text-2xl font-semibold mb-4 ">Why Choose Bulk Orders with Us?</h2>
@@ -49,7 +49,7 @@ const  BulkOrders = () => {
               <p>Getting started with a bulk order is easy:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li> Browse our product catalog to find the items you want to purchase in bulk.</li>
-                <li> Contact our customer support team via support@hirixdirect.co.uk to discuss your bulk order requirements.</li>
+                <li> Contact our customer support team via support@Homnix.co.uk to discuss your bulk order requirements.</li>
                 <li> Provide details about the products, quantities, and any customization options you need.</li>
                 <li> Our team will work closely with you to provide a competitive quote and assist you throughout the order process.</li>
               </ul>
@@ -65,10 +65,10 @@ const  BulkOrders = () => {
 
           <section>
           <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
-          <p>If you have any questions or would like to discuss a bulk order, please reach out to our dedicated customer support team at <b>support@hirixdirect.co.uk.</b> We're here to assist you in making the most of our Bulk Order Discounts and finding the perfect solution for your needs.
+          <p>If you have any questions or would like to discuss a bulk order, please reach out to our dedicated customer support team at <b>support@Homnix.co.uk.</b> We're here to assist you in making the most of our Bulk Order Discounts and finding the perfect solution for your needs.
           </p>
           <br/>
-          <p>Thank you for considering HirixDirect for your bulk order needs. We look forward to serving you and helping you save on high-quality products with our exclusive discounts.</p>
+          <p>Thank you for considering Homnix for your bulk order needs. We look forward to serving you and helping you save on high-quality products with our exclusive discounts.</p>
           </section>
         </div>
       </main>

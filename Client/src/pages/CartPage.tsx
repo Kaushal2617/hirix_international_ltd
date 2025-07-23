@@ -13,6 +13,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { addItem, removeItem, updateItem, clearCart, setCart } from "@/store/cartSlice";
 import { saveCart } from "@/store/cartSlice";
+import store from '@/store';
+import type { AppDispatch } from '@/store';
 
 const CartPage: React.FC = () => {
   const dispatch = useDispatch();
@@ -52,7 +54,17 @@ const CartPage: React.FC = () => {
           <div key={item.id ? `${item.id}-${idx}` : idx} className="relative group border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
             {/* Remove Button */}
             <button
-              onClick={() => dispatch(removeItem(item.id))}
+              onClick={() => {
+                dispatch(removeItem(item.id));
+                // Sync updated cart to backend
+                setTimeout(() => {
+                  const updatedCart = store.getState().cart.items;
+                  const userId = store.getState().auth.user?.id;
+                  if (userId) {
+                    (dispatch as AppDispatch)(saveCart(updatedCart));
+                  }
+                }, 0);
+              }}
               className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-colors duration-200 opacity-0 group-hover:opacity-100"
               aria-label={`Remove ${item.name}`}
             >

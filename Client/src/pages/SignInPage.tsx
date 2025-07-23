@@ -6,6 +6,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { setCart } from '@/store/cartSlice';
+import { setWishlist } from '@/store/wishlistSlice';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LogIn } from 'lucide-react';
@@ -41,6 +43,16 @@ const SignInPage = () => {
     try {
       const resultAction = await dispatch(login({ email: values.email, password: values.password }) as any);
       if (login.fulfilled.match(resultAction)) {
+        // Fetch cart and wishlist from backend after login
+        const userId = resultAction.payload.user.id || resultAction.payload.user._id;
+        const cartRes = await fetch(`/api/cart-items/user?userId=${userId}`, { credentials: 'include' });
+        const cartItems = await cartRes.json();
+        dispatch(setCart(Array.isArray(cartItems) ? cartItems : []));
+
+        const wishlistRes = await fetch(`/api/wishlist-items/user?userId=${userId}`, { credentials: 'include' });
+        const wishlistItems = await wishlistRes.json();
+        dispatch(setWishlist(Array.isArray(wishlistItems) ? wishlistItems : []));
+
         navigate('/');
       }
     } catch (err) {

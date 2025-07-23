@@ -14,7 +14,7 @@ const footerColumns = [
     ],
   },
   {
-    title: 'About Hirix',
+    title: 'About Homnix',
     links: [
       { to: '/about-us', label: 'About Us' },
       { to: '/privacy-policy', label: 'Privacy Policy' },
@@ -114,7 +114,7 @@ const Footer: React.FC = () => {
         </div>
       </div>
       <div className="mt-8 text-center text-xs text-gray-400 break-words">
-        &copy; {new Date().getFullYear()} Hirix. All rights reserved.
+        &copy; {new Date().getFullYear()} Homnix. All rights reserved.
       </div>
     </footer>
   );

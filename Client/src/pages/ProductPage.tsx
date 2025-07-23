@@ -18,9 +18,10 @@ import type { AppDispatch } from '@/store';
 import ReviewDialog from '@/components/orders/ReviewDialog';
 
 const ProductPage = () => {
-  const { productId } = useParams();
-  const { products, loading, error } = useSelector((state: any) => state.products);
-  const product = products.find((p: any) => (p._id || p.id)?.toString() === productId);
+  const { productId: slug } = useParams();
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const dispatch = useDispatch<AppDispatch>();
   const [activeTab, setActiveTab] = useState('description');
   const [reviews, setReviews] = useState([]);
@@ -44,17 +45,42 @@ const ProductPage = () => {
     if (hasVariants) {
       setSelectedVariantId(product.variants[0].id);
     }
-  }, [productId]);
+  }, [product]);
 
   useEffect(() => {
     dispatch(fetchProducts());
-  }, [dispatch, productId]);
+  }, [dispatch, slug]);
 
   useEffect(() => {
-    if (!productId) return;
+    if (!slug) return;
+    setLoading(true);
+    setError(null);
+    // Try fetching by slug first
+    fetch(`/api/products/slug/${slug}`)
+      .then(res => {
+        if (res.ok) return res.json();
+        // If not found, try by id
+        return fetch(`/api/products/${slug}`).then(res2 => {
+          if (!res2.ok) throw new Error('Product not found');
+          return res2.json();
+        });
+      })
+      .then(data => {
+        setProduct(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [slug]);
+
+  // Fetch reviews when product is loaded
+  useEffect(() => {
+    if (!product || !product._id) return;
     setReviewsLoading(true);
     setReviewsError(null);
-    fetch(`/api/reviews?productId=${productId}`)
+    fetch(`/api/reviews?productId=${product._id}`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch reviews');
         return res.json();
@@ -67,7 +93,7 @@ const ProductPage = () => {
         setReviewsError(err.message);
         setReviewsLoading(false);
       });
-  }, [productId]);
+  }, [product]);
 
   // Calculate average rating and review count from reviews
   const reviewCount = reviews.length;
@@ -181,7 +207,6 @@ const ProductPage = () => {
     ...(product.images || []).filter(img => img && img !== product.image)
   ].filter(Boolean);
 
-console.log("lund "+images.length)
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
@@ -610,9 +635,9 @@ console.log("lund "+images.length)
               className="bg-gradient-to-r from-pink-50 via-white to-blue-50 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center"
             >
               <Info className="w-10 h-10 text-blue-500 mb-3" />
-              <h4 className="text-xl font-bold mb-2">Why Choose Hirix?</h4>
+              <h4 className="text-xl font-bold mb-2">Why Choose Homnix?</h4>
               <p className="text-gray-700 max-w-2xl mx-auto">
-                At Hirix, we are committed to delivering premium quality, modern design, and exceptional customer service. Our products are crafted with care and backed by a 1-year warranty and hassle-free returns. Shop with confidence and elevate your space with Hirix.
+                At Homnix, we are committed to delivering premium quality, modern design, and exceptional customer service. Our products are crafted with care and backed by a 1-year warranty and hassle-free returns. Shop with confidence and elevate your space with Homnix.
               </p>
             </motion.div>
           

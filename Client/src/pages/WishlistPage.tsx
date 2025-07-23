@@ -6,7 +6,9 @@ import { Trash2, Heart, ShoppingCart, ShoppingBag, X } from "lucide-react"
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { addItem as addToCart } from '@/store/cartSlice';
-import { addItem, removeItem, clearWishlist } from '@/store/wishlistSlice';
+import { addItem, removeItem, clearWishlist, setWishlist, saveWishlist } from '@/store/wishlistSlice';
+import store from '@/store';
+import type { AppDispatch } from '@/store';
 import Footer from "../components/shared/Footer"
 
 const WishlistPage = () => {
@@ -16,7 +18,7 @@ const WishlistPage = () => {
   const moveAllToCart = () => {
     const inStockItems = wishlistItems.filter((item) => item.inStock);
     if (inStockItems.length > 0) {
-      inStockItems.forEach((item) => dispatch(addToCart(item)));
+      inStockItems.forEach((item) => dispatch(addToCart({ ...item, quantity: 1 })));
     }
   };
 
@@ -48,7 +50,14 @@ const WishlistPage = () => {
           <div key={item.id} className="relative group border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
             {/* Remove Button */}
             <button
-              onClick={() => dispatch(removeItem(item.id))}
+              onClick={() => {
+                dispatch(removeItem(item.id));
+                // Sync updated wishlist to backend
+                setTimeout(() => {
+                  const updatedWishlist = store.getState().wishlist.items;
+                  (dispatch as AppDispatch)(saveWishlist(updatedWishlist));
+                }, 0);
+              }}
               className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-colors duration-200 opacity-0 group-hover:opacity-100"
               aria-label={`Remove ${item.name} from wishlist`}
             >
@@ -119,7 +128,7 @@ const WishlistPage = () => {
                       variant="outline"
                       size="sm"
                       className="text-green-600 hover:text-green-700 hover:bg-green-50 bg-transparent"
-                      onClick={() => dispatch(addToCart(item))}
+                      onClick={() => dispatch(addToCart({ ...item, quantity: 1 }))}
                       disabled={!item.inStock}
                     >
                       <ShoppingCart className="h-4 w-4 mr-1" />

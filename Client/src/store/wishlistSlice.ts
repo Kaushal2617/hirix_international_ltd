@@ -18,7 +18,10 @@ interface WishlistState {
 
 const initialState: WishlistState = {
   items: typeof window !== 'undefined' && localStorage.getItem('wishlist')
-    ? JSON.parse(localStorage.getItem('wishlist') as string)
+    ? (() => {
+        const parsed = JSON.parse(localStorage.getItem('wishlist') as string);
+        return Array.isArray(parsed) ? parsed : [];
+      })()
     : [],
   loading: false,
   error: null,
@@ -30,10 +33,9 @@ export const fetchWishlist = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       // @ts-ignore
-      const token = getState().auth.token;
-      const res = await fetch('http://localhost:5000/api/wishlist', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const userId = getState().auth.user?.id || getState().auth.user?._id;
+      if (!userId) return rejectWithValue('User not logged in');
+      const res = await fetch(`/api/wishlist-items/user?userId=${userId}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch wishlist');
       return data;
@@ -48,14 +50,14 @@ export const saveWishlist = createAsyncThunk(
   async (wishlist: WishlistItem[], { getState, rejectWithValue }) => {
     try {
       // @ts-ignore
-      const token = getState().auth.token;
-      const res = await fetch('http://localhost:5000/api/wishlist', {
+      const userId = getState().auth.user?.id || getState().auth.user?._id;
+      if (!userId) return rejectWithValue('User not logged in');
+      const res = await fetch('/api/wishlist-items/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ items: wishlist }),
+        body: JSON.stringify({ userId, items: wishlist }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save wishlist');
@@ -71,10 +73,12 @@ export const clearWishlistBackend = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       // @ts-ignore
-      const token = getState().auth.token;
-      const res = await fetch('http://localhost:5000/api/wishlist', {
+      const userId = getState().auth.user?.id || getState().auth.user?._id;
+      if (!userId) return rejectWithValue('User not logged in');
+      const res = await fetch('/api/wishlist-items/user', {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
       });
       if (!res.ok) throw new Error('Failed to clear wishlist');
       return;
@@ -104,7 +108,7 @@ const wishlistSlice = createSlice({
       localStorage.removeItem('wishlist');
     },
     setWishlist(state, action: PayloadAction<WishlistItem[]>) {
-      state.items = action.payload;
+      state.items = Array.isArray(action.payload) ? action.payload : [];
       localStorage.setItem('wishlist', JSON.stringify(state.items));
     },
   },

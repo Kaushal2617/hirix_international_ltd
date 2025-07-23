@@ -105,17 +105,7 @@ const AllProductsPage = () => {
     });
   };
   const handleAddToWishlist = (product: any) => {
-    const productId = getId(product);
-    const exists = (Array.isArray(wishlist) ? wishlist : []).find((item: any) => getId(item) === productId);
-    if (exists) {
-      toast({
-        title: 'Already in Wishlist',
-        description: `${product.name} is already in your wishlist.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    dispatch(addToWishlist({ ...product, id: productId, inStock: product.inventory > 0 }));
+    dispatch(addToWishlist(product));
     toast({
       title: 'Added to Wishlist',
       description: `${product.name} has been added to your wishlist.`

@@ -24,4 +24,5 @@ export const productSchema = Joi.object({
   }).optional(),
   aPlusImage: Joi.string().optional(),
   variants: Joi.array().items(Joi.object()).optional(),
+  slug: Joi.string().required(),
 }); 

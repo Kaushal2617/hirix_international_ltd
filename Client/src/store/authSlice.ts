@@ -1,4 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { setCart } from './cartSlice';
+import { setWishlist } from './wishlistSlice';
 
 interface User {
   id: string;
@@ -31,7 +33,7 @@ const initialState: AuthState = {
 
 export const login = createAsyncThunk(
   'auth/login',
-  async (payload: { email: string; password: string }, { rejectWithValue }) => {
+  async (payload: { email: string; password: string }, { dispatch, rejectWithValue }) => {
     try {
       const res = await fetch('http://localhost:5000/api/users/auth/login', {
         method: 'POST',
@@ -42,6 +44,9 @@ export const login = createAsyncThunk(
       if (!res.ok) throw new Error(data.error || 'Login failed');
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
+      // Set cart and wishlist in Redux after login
+      dispatch(setCart(data.user.cartItems || []));
+      dispatch(setWishlist(data.user.wishlistItems || []));
       return data;
     } catch (err: any) {
       return rejectWithValue(err.message);

@@ -1,60 +1,45 @@
 import { Request, Response } from 'express';
-import { WishlistItem } from '../models/WishlistItem';
+import { User } from '../models/User';
+import mongoose from 'mongoose';
 
-export const getAllWishlistItems = async (req: Request, res: Response) => {
+export const getUserWishlist = async (req: Request, res: Response) => {
   try {
-    const wishlistItems = await WishlistItem.find();
-    res.json(wishlistItems);
+    const userId = req.query.userId || req.body.userId;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user.wishlistItems || []);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch wishlist items' });
+    res.status(500).json({ error: 'Failed to fetch user wishlist' });
   }
 };
 
-export const getWishlistItemById = async (req: Request, res: Response) => {
+export const setUserWishlist = async (req: Request, res: Response) => {
   try {
-    const wishlistItem = await WishlistItem.findById(req.params.id);
-    if (!wishlistItem) return res.status(404).json({ error: 'Wishlist item not found' });
-    res.json(wishlistItem);
+    const userId = req.body.userId;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const items = req.body.items || [];
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.wishlistItems = items;
+    await user.save();
+    res.status(201).json(user.wishlistItems);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch wishlist item' });
+    console.error('setUserWishlist error:', err);
+    res.status(400).json({ error: 'Failed to set user wishlist', details: err });
   }
 };
 
-export const createWishlistItem = async (req: Request, res: Response) => {
+export const clearUserWishlist = async (req: Request, res: Response) => {
   try {
-    const wishlistItem = new WishlistItem(req.body);
-    await wishlistItem.save();
-    res.status(201).json(wishlistItem);
+    const userId = req.body.userId;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.wishlistItems = [];
+    await user.save();
+    res.json({ message: 'User wishlist cleared' });
   } catch (err) {
-    res.status(400).json({ error: 'Failed to create wishlist item', details: err });
-  }
-};
-
-export const updateWishlistItem = async (req: Request, res: Response) => {
-  try {
-    const wishlistItem = await WishlistItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!wishlistItem) return res.status(404).json({ error: 'Wishlist item not found' });
-    res.json(wishlistItem);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to update wishlist item', details: err });
-  }
-};
-
-export const deleteWishlistItem = async (req: Request, res: Response) => {
-  try {
-    const wishlistItem = await WishlistItem.findByIdAndDelete(req.params.id);
-    if (!wishlistItem) return res.status(404).json({ error: 'Wishlist item not found' });
-    res.json({ message: 'Wishlist item deleted' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete wishlist item' });
-  }
-};
-
-export const deleteAllWishlistItems = async (req: Request, res: Response) => {
-  try {
-    await WishlistItem.deleteMany({});
-    res.json({ message: 'All wishlist items deleted' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete all wishlist items' });
+    res.status(500).json({ error: 'Failed to clear user wishlist' });
   }
 }; 

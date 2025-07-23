@@ -47,7 +47,7 @@ const AdminSidebar = () => {
       style={{ boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)" }}
     >
       <div className="p-6 border-b border-gray-100">
-        <h1 className="text-2xl font-extrabold tracking-tight text-red-500" style={{letterSpacing: '0.04em'}}>HIRIX ADMIN</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-red-500" style={{letterSpacing: '0.04em'}}>HOMNIX ADMIN</h1>
       </div>
       
       <nav className="flex-1 p-4 overflow-y-auto">

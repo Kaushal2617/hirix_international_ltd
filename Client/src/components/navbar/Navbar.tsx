@@ -41,7 +41,7 @@ const Navbar = ({ categories = [] }) => {
   return (
     <header className="bg-white">
       {/* Announcement bar */}
-      <div className="w-full bg-black text-white py-2 text-center text-sm">
+      {/* <div className="w-full bg-black text-white py-2 text-center text-sm">
         <TypeAnimation
           sequence={[
             "Free UK shipping on all orders and free next-day shipping on any order over £75!",
@@ -54,7 +54,17 @@ const Navbar = ({ categories = [] }) => {
           repeat={Infinity}
           className="font-medium"
         />
-      </div>
+      </div> */}
+
+<div className="w-full bg-gradient-to-r from-purple-600 via-red-500 to-orange-300 text-white py-2 text-center text-">
+      <TypeAnimation
+        sequence={["Free UK shipping on all orders and free next-day shipping on any order over £75!", 2000, "", 500]}
+        wrapper="span"
+        speed={50}
+        repeat={Number.POSITIVE_INFINITY}
+        className="font-bold"
+      />
+    </div>
 
       <div className="w-full max-w-full mx-auto px-2 sm:px-4">
         {/* Main navbar */}

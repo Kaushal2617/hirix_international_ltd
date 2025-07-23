@@ -2,7 +2,7 @@ import React from "react";
 import "./RotatingCircleText.css";
 
 // Adjust the text so it fits the circle and is not cut off
-const circleText = " * HIRIX INTERNATIONAL LTD * HIRIX INTERNATIONAL LTD * ";
+const circleText = " * HOMNIX * HOMNIX * HOMNIX *";
 
 const RotatingCircleText = () => (
   <div className="rotating-circle-container">

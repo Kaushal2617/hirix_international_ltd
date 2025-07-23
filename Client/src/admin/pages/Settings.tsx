@@ -15,11 +15,11 @@ const AdminSettings = () => {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [formData, setFormData] = useState({
-    storeName: "Hirix",
-    storeUrl: "https://hirix.co.uk",
-    contactEmail: "support@hirixdirect.co.uk",
+    storeName: "Homnix",
+    storeUrl: "https://homnix.co.uk",
+    contactEmail: "support@homnix.co.uk",
     supportPhone: " +44 116 507 2787",
-    storeAddress: "HirixDirect UK. The Dysart Way, Leicester LE1 2JY, United Kingdom."
+    storeAddress: "Homnix. The Dysart Way, Leicester LE1 2JY, United Kingdom."
   });
   const [adminEmail, setAdminEmail] = useState(DEFAULT_ADMIN_EMAIL);
   const [changeTab, setChangeTab] = useState<'password' | 'email'>('password');

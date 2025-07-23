@@ -18,8 +18,11 @@ interface CartState {
 
 const initialState: CartState = {
   items: typeof window !== 'undefined' && localStorage.getItem('cart')
-    ? JSON.parse(localStorage.getItem('cart') as string)
-    : [],
+  ? (() => {
+      const parsed = JSON.parse(localStorage.getItem('cart') as string);
+      return Array.isArray(parsed) ? parsed : [];
+    })()
+  : [],
   loading: false,
   error: null,
 };
@@ -30,10 +33,9 @@ export const fetchCart = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       // @ts-ignore
-      const token = getState().auth.token;
-      const res = await fetch('http://localhost:5000/api/cart-items', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const userId = getState().auth.user?.id || getState().auth.user?._id;
+      if (!userId) return rejectWithValue('User not logged in');
+      const res = await fetch(`/api/cart-items/user?userId=${userId}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch cart');
       return data;
@@ -48,28 +50,22 @@ export const saveCart = createAsyncThunk(
   async (cart: CartItem[], { getState, rejectWithValue }) => {
     try {
       // @ts-ignore
-      const token = getState().auth.token;
+      const userId = getState().auth.user?.id || getState().auth.user?._id;
+      if (!userId) return rejectWithValue('User not logged in');
       // Normalize cart items for backend
-      const normalizedItems = cart
-        .map(item => {
-          const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
-          if (!productId || isNaN(productId)) return null;
-          return {
-            productId,
-            name: item.name,
-            price: item.price,
-            image: item.image,
-            quantity: item.quantity,
-          };
-        })
-        .filter(Boolean);
-      const res = await fetch('http://localhost:5000/api/cart-items/user', {
+      const normalizedItems = cart.map(item => ({
+        productId: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+      }));
+      const res = await fetch('/api/cart-items/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ items: normalizedItems }),
+        body: JSON.stringify({ userId, items: normalizedItems }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save cart');
@@ -85,10 +81,12 @@ export const clearCartBackend = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       // @ts-ignore
-      const token = getState().auth.token;
-      const res = await fetch('http://localhost:5000/api/cart-items/user', {
+      const userId = getState().auth.user?.id || getState().auth.user?._id;
+      if (!userId) return rejectWithValue('User not logged in');
+      const res = await fetch('/api/cart-items/user', {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
       });
       if (!res.ok) throw new Error('Failed to clear cart');
       return;

@@ -9,11 +9,15 @@ import ProductCard from '@/components/product/ProductCard';
 import { addItem as addToCart } from '@/store/cartSlice';
 import { addItem as addToWishlist } from '@/store/wishlistSlice';
 import { toast } from '@/components/ui/use-toast';
+import { setCart } from '@/store/cartSlice';
+import { setWishlist } from '@/store/wishlistSlice';
 
 const FeaturedProducts = () => {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state: any) => state.products);
   const wishlist = useSelector((state: any) => state.wishlist.items);
+  const user = useSelector((state: any) => state.auth.user);
+  const token = useSelector((state: any) => state.auth.token) || localStorage.getItem('token');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   useEffect(() => {
@@ -39,27 +43,73 @@ const FeaturedProducts = () => {
   };
 
   const getId = (p: any) => (p.id ? p.id.toString() : p._id ? p._id.toString() : '');
-  const handleAddToCart = (product: any) => {
+  const cartItemsAll = useSelector((state: any) => state.cart.items);
+  const wishlistAll = useSelector((state: any) => state.wishlist.items);
+  const handleAddToCart = async (product: any) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      toast({ title: 'User ID missing. Please log in.' });
+      return;
+    }
     const productId = getId(product);
-    dispatch(addToCart({ ...product, id: productId, quantity: 1 }));
+    const cartItem = {
+      productId,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+    };
+    dispatch(addToCart({ ...cartItem, id: productId }));
+    // Save full cart to backend
+    await fetch('/api/cart-items/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        userId,
+        items: [
+          ...cartItemsAll.filter((i: any) => i.productId !== cartItem.productId && i.id !== cartItem.productId),
+          cartItem
+        ]
+      }),
+    });
     toast({
       title: 'Added to Cart',
       description: `${product.name} has been added to your cart.`
     });
   };
 
-  const handleAddToWishlist = (product: any) => {
-    const productId = getId(product);
-    const exists = wishlist.find((item: any) => getId(item) === productId);
-    if (exists) {
-      toast({
-        title: 'Already in Wishlist',
-        description: `${product.name} is already in your wishlist.`,
-        variant: 'destructive',
-      });
+  const handleAddToWishlist = async (product: any) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      toast({ title: 'User ID missing. Please log in.' });
       return;
     }
-    dispatch(addToWishlist({ ...product, id: productId, inStock: product.inventory > 0 }));
+    const wishlistItem = {
+      productId: product._id, // must be a valid ObjectId string
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      inStock: product.inStock ?? true,
+    };
+    dispatch(addToWishlist({ ...wishlistItem, id: product._id }));
+    // Save full wishlist to backend
+    await fetch('/api/wishlist-items/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        userId,
+        items: [
+          ...wishlistAll.filter((i: any) => i.productId !== wishlistItem.productId && i.id !== wishlistItem.productId),
+          wishlistItem
+        ]
+      }),
+    });
     toast({
       title: 'Added to Wishlist',
       description: `${product.name} has been added to your wishlist.`

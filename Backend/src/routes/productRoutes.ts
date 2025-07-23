@@ -9,8 +9,12 @@ const router = Router();
 
 router.use(logProductRequest);
 
+// Search suggestions endpoint
+router.get('/search/suggestions', productController.getSearchSuggestions);
+
 router.get('/', productController.getAllProducts);
 router.get('/admin/all', authenticate, isAdmin, productController.getAllProductsAdmin);
+router.get('/slug/:slug', productController.getProductBySlug);
 router.get('/:id', productController.getProductById);
 router.post('/', authenticate, isAdmin, productController.createProduct);
 router.put('/:id', authenticate, isAdmin, productController.updateProduct);

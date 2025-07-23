@@ -7,11 +7,9 @@ const router = Router();
 
 router.use(logWishlistItemRequest);
 
-router.get('/', authenticate, isAdmin, wishlistItemController.getAllWishlistItems);
-router.get('/:id', authenticate, isSelfOrAdmin, wishlistItemController.getWishlistItemById);
-router.post('/', authenticate, wishlistItemController.createWishlistItem);
-router.put('/:id', authenticate, isSelfOrAdmin, wishlistItemController.updateWishlistItem);
-router.delete('/:id', authenticate, isSelfOrAdmin, wishlistItemController.deleteWishlistItem);
-router.delete('/all', authenticate, isAdmin, wishlistItemController.deleteAllWishlistItems);
+// Only keep /user routes
+router.get('/user', wishlistItemController.getUserWishlist);
+router.post('/user', wishlistItemController.setUserWishlist);
+router.delete('/user', wishlistItemController.clearUserWishlist);
 
 export default router; 

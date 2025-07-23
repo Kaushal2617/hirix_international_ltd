@@ -9,7 +9,7 @@ const  PrivacyPolicy = () => {
         <h1 className="text-3xl font-bold mb-8  ">Privacy Policy</h1>
         <div className="max-w-3xl mx-auto space-y-8">
           <section>
-            <p className="list-disc pl-6 space-y-2">This Privacy Policy is an integral part of the User Terms of Use Agreement and should be read in conjunction with the stated Terms and Conditions. The purpose of this Privacy Policy is to explain how HirixDirect (referred to as 'HirixDirect,' 'we,' or 'us') collects, uses, and protects your personal information when you visit and/or use the HirixDirect website and other products and services (referred to as 'HirixDirect Products and Services'). Please read this policy carefully to understand how your personal information will be treated as you avail yourself of the services provided by HirixDirect.</p>
+            <p className="list-disc pl-6 space-y-2">This Privacy Policy is an integral part of the User Terms of Use Agreement and should be read in conjunction with the stated Terms and Conditions. The purpose of this Privacy Policy is to explain how Homnix (referred to as 'Homnix,' 'we,' or 'us') collects, uses, and protects your personal information when you visit and/or use the Homnix website and other products and services (referred to as 'Homnix Products and Services'). Please read this policy carefully to understand how your personal information will be treated as you avail yourself of the services provided by Homnix.</p>
             <div className="space-y-4">
               <br/>
 
@@ -60,7 +60,7 @@ const  PrivacyPolicy = () => {
 
           <section>
           <h2 className="text-2xl font-semibold mb-4">Questions</h2>
-          <p className="list-disc pl-6 space-y-2">If you have any questions about our Privacy Policy, please email us at <b>support@hirixdirect.co.uk.</b>
+          <p className="list-disc pl-6 space-y-2">If you have any questions about our Privacy Policy, please email us at <b>support@Homnix.co.uk.</b>
           </p>
           </section>
         </div>

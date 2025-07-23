@@ -6,12 +6,12 @@ const AboutUsPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">About Hirix</h1>
+        <h1 className="text-3xl font-bold mb-8">About Homnix</h1>
         <div className="max-w-3xl mx-auto space-y-8">
           <section>
             <h2 className="text-2xl font-semibold mb-4">Our Story</h2>
             <div className="space-y-4">
-              <p>At HirixDirect, we believe that shopping should be an enjoyable and effortless journey. Our story begins with a passionate team of retail enthusiasts who recognized the need for a modern and customer-centric approach to online shopping in the UK. We envisioned a platform where quality, affordability, and convenience converge to redefine the way you shop.</p>
+              <p>At Homnix, we believe that shopping should be an enjoyable and effortless journey. Our story begins with a passionate team of retail enthusiasts who recognized the need for a modern and customer-centric approach to online shopping in the UK. We envisioned a platform where quality, affordability, and convenience converge to redefine the way you shop.</p>
               <p><b>Our mission is clear and purposeful: </b>  
               To provide an exceptional online shopping experience that exceeds your expectations at every step.</p>
             </div>
@@ -45,8 +45,8 @@ const AboutUsPage = () => {
           
           <section>
             <h2 className="text-2xl font-semibold mb-4">Our Team</h2>
-            <p className="mb-6">Hirix is powered by a dedicated team of professionals passionate about home improvement and customer satisfaction.</p>
-            <div className="grid md:grid-cols-3 gap-6">
+            <p className="mb-6">Homnix is powered by a dedicated team of professionals passionate about home improvement and customer satisfaction.</p>
+            {/* <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4"></div>
                 <h3 className="font-medium">Dhiren Punjani</h3>
@@ -57,7 +57,7 @@ const AboutUsPage = () => {
                 <h3 className="font-medium">Rikesh Punjani</h3>
                 <p className="text-gray-600">Co-Founder</p>
               </div>
-              {/* <div className="text-center">
+              <div className="text-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4">
   <img
     src="https://th.bing.com/th/id/OIP.seGAVdmjkCEpME1XYaHxRgHaFE?w=260&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7"
@@ -67,8 +67,8 @@ const AboutUsPage = () => {
 </div>
                 <h3 className="font-medium">Mark Johnson</h3>
                 <p className="text-gray-600">Head of Customer Experience</p>
-              </div> */}
-            </div>
+              </div>
+            </div> */}
           </section>
         </div>
       </main>
