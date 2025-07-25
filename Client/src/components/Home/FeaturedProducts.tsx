@@ -51,7 +51,7 @@ const FeaturedProducts = () => {
       toast({ title: 'User ID missing. Please log in.' });
       return;
     }
-    const productId = getId(product);
+    const productId = product._id || product.id;
     const cartItem = {
       productId,
       name: product.name,
@@ -60,21 +60,6 @@ const FeaturedProducts = () => {
       quantity: 1,
     };
     dispatch(addToCart({ ...cartItem, id: productId }));
-    // Save full cart to backend
-    await fetch('/api/cart-items/user', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        userId,
-        items: [
-          ...cartItemsAll.filter((i: any) => i.productId !== cartItem.productId && i.id !== cartItem.productId),
-          cartItem
-        ]
-      }),
-    });
     toast({
       title: 'Added to Cart',
       description: `${product.name} has been added to your cart.`
@@ -95,21 +80,6 @@ const FeaturedProducts = () => {
       inStock: product.inStock ?? true,
     };
     dispatch(addToWishlist({ ...wishlistItem, id: product._id }));
-    // Save full wishlist to backend
-    await fetch('/api/wishlist-items/user', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        userId,
-        items: [
-          ...wishlistAll.filter((i: any) => i.productId !== wishlistItem.productId && i.id !== wishlistItem.productId),
-          wishlistItem
-        ]
-      }),
-    });
     toast({
       title: 'Added to Wishlist',
       description: `${product.name} has been added to your wishlist.`

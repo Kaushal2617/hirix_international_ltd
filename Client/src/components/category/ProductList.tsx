@@ -6,12 +6,14 @@ import type { Product } from '../../data/products';
 interface ProductListProps {
   filteredProducts: Product[];
   resetFilters: () => void;
+  onAddToCart?: (product: any) => void;
+  onAddToWishlist?: (product: any) => void;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ filteredProducts, resetFilters }) => {
-  // Dummy handlers (to be replaced by parent if needed)
-  const handleAddToCart = (product: any) => {};
-  const handleAddToWishlist = (product: any) => {};
+const ProductList: React.FC<ProductListProps> = ({ filteredProducts, resetFilters, onAddToCart, onAddToWishlist }) => {
+  // Use parent handlers if provided, otherwise no-op
+  const handleAddToCart = onAddToCart || (() => {});
+  const handleAddToWishlist = onAddToWishlist || (() => {});
 
   if (filteredProducts.length === 0) {
     return (

@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 
 export const getUserWishlist = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId || req.query.userId;
+    const userId = req.query.userId || req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
     const wishlist = await Wishlist.findOne({ userId });
     res.json(wishlist ? wishlist.items : []);
@@ -15,7 +15,7 @@ export const getUserWishlist = async (req: Request, res: Response) => {
 
 export const setUserWishlist = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId || req.body.userId;
+    const userId = req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
     const items = req.body.items || [];
     let wishlist = await Wishlist.findOne({ userId });
@@ -33,7 +33,7 @@ export const setUserWishlist = async (req: Request, res: Response) => {
 
 export const clearUserWishlist = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId || req.body.userId;
+    const userId = req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
     const wishlist = await Wishlist.findOne({ userId });
     if (wishlist) {
@@ -48,7 +48,7 @@ export const clearUserWishlist = async (req: Request, res: Response) => {
 
 export const addWishlistItem = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId || req.body.userId;
+    const userId = req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
     const item = req.body.item;
     if (!item) return res.status(400).json({ error: 'item is required' });
@@ -70,7 +70,7 @@ export const addWishlistItem = async (req: Request, res: Response) => {
 
 export const removeWishlistItem = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId || req.body.userId;
+    const userId = req.body.userId;
     const productId = req.body.productId || req.params.productId;
     if (!userId || !productId) return res.status(400).json({ error: 'userId and productId are required' });
     const wishlist = await Wishlist.findOne({ userId });

@@ -10,6 +10,7 @@ export const productSchema = Joi.object({
   rating: Joi.number().required(),
   reviewCount: Joi.number().required(),
   category: Joi.string().required(),
+  subcategory: Joi.string().required(),
   color: Joi.string().required(),
   material: Joi.string().required(),
   description: Joi.string().optional(),

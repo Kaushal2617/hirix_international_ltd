@@ -33,6 +33,7 @@ import ReturnReplacePage from "./pages/ReturnReplacePage";
 import AccountPage from "./pages/AccountPage";
 import NewArrivalsPage from './pages/NewArrivalsPage';
 import BestSellersPage from './pages/BestSellersPage';
+import SubcategoryPage from './pages/SubcategoryPage';
 // Admin Imports
 import AdminCustomers from "./admin/pages/Customers";
 import AdminSettings from "./admin/pages/Settings";
@@ -50,16 +51,67 @@ import CategoryGrid from './components/Home/CategoryGrid';
 import CategoryMenu from './components/navbar/CategoryMenu';
 import MobileMenu from './components/navbar/MobileMenu';
 import ClientLayout from './pages/ClientLayout';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCategories } from './store/categorySlice';
 import { RootState } from './store';
 import { fetchProducts } from './store/productSlice';
+import { fetchCart, saveCart } from './store/cartSlice';
+import { fetchWishlist, saveWishlist, clearWishlist } from './store/wishlistSlice';
 
 const queryClient = new QueryClient();
 const App = () => {
   const dispatch = useDispatch();
   const categories = useSelector((state: RootState) => state.categories.categories);
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartInitialized = useSelector((state: RootState) => state.cart.initialized);
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const wishlistInitialized = useSelector((state: RootState) => state.wishlist.initialized);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const hasFetchedWishlist = useRef(false);
+
+  // Fetch cart and wishlist from backend on login
+  useEffect(() => {
+    if (user && user.id) {
+      dispatch(fetchCart() as any);
+      dispatch(fetchWishlist() as any);
+      hasFetchedWishlist.current = false;
+    }
+  }, [user, dispatch]);
+
+  // Set flag after wishlist is fetched
+  useEffect(() => {
+    if (wishlistInitialized && user && user.id) {
+      hasFetchedWishlist.current = true;
+    }
+  }, [wishlistInitialized, user]);
+
+  // Sync cart to backend globally after initialization
+  useEffect(() => {
+    if (cartInitialized && user && user.id && cartItems.length > 0) {
+      dispatch(saveCart(cartItems) as any);
+    }
+  }, [cartItems, user, dispatch, cartInitialized]);
+
+  // Sync wishlist to backend globally after initialization and only after fetch
+  useEffect(() => {
+    if (
+      hasFetchedWishlist.current &&
+      user &&
+      user.id &&
+      wishlistItems.length > 0
+    ) {
+      dispatch(saveWishlist(wishlistItems) as any);
+    }
+  }, [wishlistItems, user, dispatch]);
+
+  // Clear wishlist from Redux on logout
+  useEffect(() => {
+    if (!user || !user.id) {
+      dispatch(clearWishlist());
+      hasFetchedWishlist.current = false;
+    }
+  }, [user, dispatch]);
 
   const ensureSpecialCategories = (categories) => {
     const specials = [
@@ -104,6 +156,7 @@ const App = () => {
                 <Route path="/" element={<Index categories={categoriesWithSpecials} />} />
                 <Route path="/category/:categoryName" element={<CategoryPage />} />
                 <Route path="/category/:category/:subcategory" element={<CategoryPage />} />
+                <Route path="/category/:categoryName/:subcategoryName" element={<SubcategoryPage />} />
                 <Route path="/product/:productId" element={<ProductPage />} />
                 <Route path="/sale" element={<SalePage />} />
                 <Route path="/all-products" element={<AllProductsPage />} />

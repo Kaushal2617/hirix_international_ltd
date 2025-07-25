@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
-import { User } from '../models/User';
+import { Cart } from '../models/CartItem';
 import mongoose from 'mongoose';
 
 export const getUserCart = async (req: Request, res: Response) => {
   try {
     const userId = req.query.userId || req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user.cartItems || []);
+    const cart = await Cart.findOne({ userId });
+    res.json(cart ? cart.items : []);
   } catch (err) {
     console.error('getUserCart error:', err);
     res.status(500).json({ error: 'Failed to fetch user cart' });
@@ -20,11 +19,14 @@ export const setUserCart = async (req: Request, res: Response) => {
     const userId = req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
     const items = req.body.items || [];
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    user.cartItems = items;
-    await user.save();
-    res.status(201).json(user.cartItems);
+    let cart = await Cart.findOne({ userId });
+    if (!cart) {
+      cart = new Cart({ userId, items });
+    } else {
+      cart.items = items;
+    }
+    await cart.save();
+    res.status(201).json(cart.items);
   } catch (err) {
     console.error('setUserCart error:', err);
     res.status(400).json({ error: 'Failed to set user cart', details: err });
@@ -35,10 +37,11 @@ export const clearUserCart = async (req: Request, res: Response) => {
   try {
     const userId = req.body.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    user.cartItems = [];
-    await user.save();
+    const cart = await Cart.findOne({ userId });
+    if (cart) {
+      cart.items = [];
+      await cart.save();
+    }
     res.json({ message: 'User cart cleared' });
   } catch (err) {
     console.error('clearUserCart error:', err);

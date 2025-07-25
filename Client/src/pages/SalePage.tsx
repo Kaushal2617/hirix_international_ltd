@@ -7,8 +7,9 @@ import ProductList from '../components/category/ProductList';
 import MobileFiltersDrawer from '../components/MobileFiltersDrawer';
 import type { Product } from '../data/products';
 import { Sparkles, Tag } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
+import { addItem as addToWishlist } from '@/store/wishlistSlice';
 
 const SalePage = () => {
   const products = useSelector((state: RootState) => state.products.products);
@@ -57,6 +58,21 @@ const SalePage = () => {
     setSelectedCategory
   };
 
+  // Add to wishlist logic for sale products
+  const dispatch = useDispatch();
+  const handleAddToWishlist = (product: any) => {
+    const wishlistItem = {
+      productId: product._id || product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      inStock: product.inventory > 0,
+      id: product._id || product.id,
+    };
+    dispatch(addToWishlist(wishlistItem));
+    // Optionally show a toast here
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
@@ -94,6 +110,7 @@ const SalePage = () => {
               <ProductList 
                 filteredProducts={filteredProducts}
                 resetFilters={resetFilters}
+                onAddToWishlist={handleAddToWishlist}
               />
             </div>
           </div>

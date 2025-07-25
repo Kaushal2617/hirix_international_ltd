@@ -169,27 +169,25 @@ const ProductPage = () => {
   const display = hasVariants && selectedVariant ? selectedVariant : product;
 
   const handleAddToCart = () => {
-    if (!display) return;
+    const productId = product._id || product.id;
     dispatch(addToCart({
-      ...display,
-      id: display.id?.toString() || product.id?.toString(),
-      productId: typeof display.id === 'string' ? parseInt(display.id, 10) : display.id || product.id,
-      name: (display as any).name || product.name,
-      price: display.price,
-      image: (display as any).image || (display.images ? display.images[0] : product.image),
-      quantity: 1,
+      ...product,
+      id: productId,
+      quantity: 1
     }));
     toast({
-      title: 'Added to Cart',
-      description: `${(display as any).name || product.name} has been added to your cart.`
+      title: "Added to Cart",
+      description: `${product.name} has been added to your cart.`
     });
   };
 
   const handleAddToWishlist = () => {
     if (!display) return;
+    const productId = display._id || display.id || product._id || product.id;
     dispatch(addToWishlist({
       ...display,
-      id: display.id?.toString() || product.id?.toString(),
+      id: productId,
+      productId, // always set productId for backend
       name: (display as any).name || product.name,
       price: display.price,
       image: (display as any).image || (display.images ? display.images[0] : product.image),

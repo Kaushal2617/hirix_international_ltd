@@ -8,6 +8,7 @@ export interface ProductInput {
   rating: number;
   reviewCount: number;
   category: string;
+  subcategory: string;
   color: string;
   material: string;
   description?: string;

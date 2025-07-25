@@ -8,9 +8,11 @@ import cartItemRoutes from './routes/cartItemRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import orderRoutes from './routes/orderRoutes';
 import reviewRoutes from './routes/reviewRoutes';
-import wishlistItemRoutes from './routes/wishlistItemRoutes';
 import bannerRoutes from './routes/bannerRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import wishlistRoutes from './routes/wishlistRoutes';
+import materialRoutes from './routes/materialRoutes';
+import colorRoutes from './routes/colorRoutes';
 
 const app: Application = express();
 
@@ -29,9 +31,11 @@ app.use('/api/cart-items', cartItemRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/wishlist-items', wishlistItemRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/materials', materialRoutes);
+app.use('/api/colors', colorRoutes);
 
 // Example route
 app.get('/', (req, res) => {

@@ -5,19 +5,32 @@ import CategoryHeader from '../components/category/CategoryHeader';
 import ProductList from '../components/category/ProductList';
 import NoProductsFound from '../components/category/NoProductsFound';
 import CategorySidebar from '../components/category/CategorySidebar';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { addItem as addToCart } from '../store/cartSlice';
+import { addItem as addToWishlist } from '../store/wishlistSlice';
+import { toast } from '@/components/ui/use-toast';
 import type { RootState } from '../store';
 
 const CategoryPage = () => {
   const { categoryName, subcategory } = useParams();
-  const title = subcategory ? `${subcategory} - ${categoryName}` : categoryName;
+  let title = '';
+  function capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+  if (subcategory) {
+    title = capitalize(subcategory);
+  } else if (categoryName) {
+    title = capitalize(categoryName);
+  }
   const products = useSelector((state: RootState) => state.products.products);
   const categories = useSelector((state: RootState) => state.categories.categories);
+  const dispatch = useDispatch();
 
   // Filter products based on category or subcategory first
   const categoryProducts = products.filter(product => {
     if (subcategory) {
-      return product.category.toLowerCase() === subcategory.toLowerCase();
+      return product.subcategory && product.subcategory.toLowerCase() === subcategory.toLowerCase();
     }
     return product.category.toLowerCase() === categoryName?.toLowerCase();
   });
@@ -83,6 +96,30 @@ const CategoryPage = () => {
     setSelectedCategory("all");
   };
 
+  const handleAddToCart = (product: any) => {
+    const productId = product._id || product.id;
+    dispatch(addToCart({ ...product, id: productId, quantity: 1 }));
+    toast({
+      title: 'Added to Cart',
+      description: `${product.name} has been added to your cart.`
+    });
+  };
+  const handleAddToWishlist = (product: any) => {
+    const wishlistItem = {
+      productId: product._id || product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      inStock: product.inventory > 0,
+      id: product._id || product.id,
+    };
+    dispatch(addToWishlist(wishlistItem));
+    toast({
+      title: 'Added to Wishlist',
+      description: `${product.name} has been added to your wishlist.`
+    });
+  };
+
   const filterProps = {
     priceRange,
     setPriceRange,
@@ -132,6 +169,8 @@ const CategoryPage = () => {
                 <ProductList 
                   filteredProducts={filteredProducts} 
                   resetFilters={resetFilters}
+                  onAddToCart={handleAddToCart}
+                  onAddToWishlist={handleAddToWishlist}
                 />
               </div>
             </div>

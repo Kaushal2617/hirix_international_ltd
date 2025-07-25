@@ -9,6 +9,7 @@ export interface Product {
     rating: number;
     reviewCount: number;
     category: string;
+    subcategory: string;
     color: string;
     material: string;
     brand?: string; // Added
@@ -54,6 +55,7 @@ export const allProducts: Product[] = [
     rating: 4.5,
     reviewCount: 42,
     category: "Living Room",
+    subcategory: "Sofas",
     color: "Gray",
     material: "Fabric",
     brand: "Hirix",
@@ -103,6 +105,7 @@ export const allProducts: Product[] = [
     rating: 4.2,
     reviewCount: 28,
     category: "Home Office",
+    subcategory: "Chairs",
     color: "Black",
     material: "Leather",
     brand: "Hirix",
@@ -120,6 +123,7 @@ export const allProducts: Product[] = [
     rating: 4.8,
     reviewCount: 35,
     category: "Outdoor",
+    subcategory: "Swing Chairs",
     color: "Beige",
     material: "Metal",
     brand: "Hirix",
@@ -137,6 +141,7 @@ export const allProducts: Product[] = [
     rating: 4.3,
     reviewCount: 21,
     category: "Bedroom",
+    subcategory: "Chests",
     color: "Brown",
     material: "Wood",
     brand: "Hirix",
@@ -154,6 +159,7 @@ export const allProducts: Product[] = [
     rating: 4.1,
     reviewCount: 18,
     category: "Garden",
+    subcategory: "Planter Boxes",
     color: "Black",
     material: "Metal",
     brand: "Hirix",
@@ -171,6 +177,7 @@ export const allProducts: Product[] = [
     rating: 4.6,
     reviewCount: 32,
     category: "Garden",
+    subcategory: "Fire Pits",
     color: "Black",
     material: "Metal",
     brand: "Hirix",

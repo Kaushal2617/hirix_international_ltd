@@ -18,6 +18,7 @@ export interface ProductFormData {
   brand?: string; // Added
   productModel?: string; // Added
   category: string;
+  subcategory: string;
   price: number;
   oldPrice?: number;
   material: string;

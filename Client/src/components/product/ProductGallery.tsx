@@ -60,7 +60,6 @@ const ProductGallery = ({
       ? [{ type: "video" as const, src: currentVideo, alt: `${productName} - ${selectedColor || "Default"} - Video` }]
       : []),
   ]
-console.log("images lund "+allMedia.length)
   // Reset selected image when color changes
   useEffect(() => {
     setSelectedImage(0)

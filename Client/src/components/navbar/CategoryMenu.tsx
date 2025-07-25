@@ -73,7 +73,7 @@ const CategoryMenu: React.FC<CategoryMenuProps> = ({ categories = [], rightCateg
                       {category.subcategories.map((subcategory) => (
                         <li key={subcategory.name}>
                           <Link
-                            to={subcategory.link}
+                            to={`/category/${category.slug}/${subcategory.slug}`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                             onClick={() => setHoveredCategory(null)}
                           >

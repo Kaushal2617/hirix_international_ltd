@@ -42,7 +42,13 @@ const SearchBar = () => {
       // Redirect to the first suggestion
       const first = suggestions[0];
       if (first.type === 'category') navigate(`/category/${first.slug}`);
-      else if (first.type === 'subcategory') navigate(`/subcategory/${first.slug}`);
+      else if (first.type === 'subcategory') {
+        if (first.categorySlug) {
+          navigate(`/category/${first.categorySlug}/${first.slug}`);
+        } else {
+          navigate(`/category/unknown/${first.slug}`);
+        }
+      }
       else if (first.type === 'product') navigate(`/product/${first.slug}`);
     }
   };
@@ -128,7 +134,13 @@ const SearchBar = () => {
                   setSearchTerm(suggestion.name);
                   setShowSuggestions(false);
                   if (suggestion.type === 'category') navigate(`/category/${suggestion.slug}`);
-                  else if (suggestion.type === 'subcategory') navigate(`/subcategory/${suggestion.slug}`);
+                  else if (suggestion.type === 'subcategory') {
+                    if (suggestion.categorySlug) {
+                      navigate(`/category/${suggestion.categorySlug}/${suggestion.slug}`);
+                    } else {
+                      navigate(`/category/unknown/${suggestion.slug}`);
+                    }
+                  }
                   else if (suggestion.type === 'product') navigate(`/product/${suggestion.slug}`);
                 }}
               >

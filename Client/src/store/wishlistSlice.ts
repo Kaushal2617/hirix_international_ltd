@@ -7,6 +7,7 @@ export interface WishlistItem {
   price: number;
   image?: string;
   inStock?: boolean;
+  productId?: string; // Added productId to interface
   [key: string]: any;
 }
 
@@ -14,6 +15,7 @@ interface WishlistState {
   items: WishlistItem[];
   loading: boolean;
   error: string | null;
+  initialized: boolean; // new flag
 }
 
 const initialState: WishlistState = {
@@ -25,6 +27,7 @@ const initialState: WishlistState = {
     : [],
   loading: false,
   error: null,
+  initialized: false, // new flag
 };
 
 // Thunks for backend sync
@@ -34,8 +37,14 @@ export const fetchWishlist = createAsyncThunk(
     try {
       // @ts-ignore
       const userId = getState().auth.user?.id || getState().auth.user?._id;
+      // @ts-ignore
+      const token = getState().auth.token || localStorage.getItem('token');
       if (!userId) return rejectWithValue('User not logged in');
-      const res = await fetch(`/api/wishlist-items/user?userId=${userId}`);
+      const res = await fetch(`/api/wishlist/user?userId=${userId}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch wishlist');
       return data;
@@ -51,13 +60,29 @@ export const saveWishlist = createAsyncThunk(
     try {
       // @ts-ignore
       const userId = getState().auth.user?.id || getState().auth.user?._id;
+      // @ts-ignore
+      const token = getState().auth.token || localStorage.getItem('token');
       if (!userId) return rejectWithValue('User not logged in');
-      const res = await fetch('/api/wishlist-items/user', {
+      // Map wishlist items to ensure productId is present and valid
+      const normalizedItems = wishlist
+        .map(item => ({
+          productId: item.productId || item.id,
+          name: item.name,
+          price: item.price,
+          image: item.image,
+          inStock: item.inStock,
+        }))
+        .filter(item => !!item.productId && typeof item.productId === 'string');
+      if (!Array.isArray(normalizedItems) || normalizedItems.length !== wishlist.length) {
+        return rejectWithValue('One or more wishlist items are missing a valid productId.');
+      }
+      const res = await fetch('/api/wishlist/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ userId, items: wishlist }),
+        body: JSON.stringify({ userId, items: normalizedItems }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save wishlist');
@@ -74,10 +99,15 @@ export const clearWishlistBackend = createAsyncThunk(
     try {
       // @ts-ignore
       const userId = getState().auth.user?.id || getState().auth.user?._id;
+      // @ts-ignore
+      const token = getState().auth.token || localStorage.getItem('token');
       if (!userId) return rejectWithValue('User not logged in');
-      const res = await fetch('/api/wishlist-items/user', {
+      const res = await fetch('/api/wishlist/user', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ userId }),
       });
       if (!res.ok) throw new Error('Failed to clear wishlist');
@@ -95,7 +125,7 @@ const wishlistSlice = createSlice({
     addItem(state, action: PayloadAction<WishlistItem>) {
       const exists = state.items.find(item => item.id === action.payload.id);
       if (!exists) {
-        state.items.push(action.payload);
+        state.items.push({ ...action.payload, productId: action.payload.productId || action.payload.id });
       }
       localStorage.setItem('wishlist', JSON.stringify(state.items));
     },
@@ -120,12 +150,17 @@ const wishlistSlice = createSlice({
       })
       .addCase(fetchWishlist.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        // Map productId to id for frontend compatibility
+        state.items = Array.isArray(action.payload)
+          ? action.payload.map(item => ({ ...item, id: item.productId }))
+          : [];
+        state.initialized = true; // set flag
         localStorage.setItem('wishlist', JSON.stringify(state.items));
       })
       .addCase(fetchWishlist.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.initialized = true; // set flag even on error
       })
       .addCase(saveWishlist.pending, (state) => {
         state.loading = true;

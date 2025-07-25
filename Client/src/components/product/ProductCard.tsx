@@ -52,13 +52,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onAddTo
                 <Star
                   key={i}
                   size={14}
-                  fill={i < Math.floor(product.rating) ? "#FFC107" : "none"}
-                  stroke={i < Math.floor(product.rating) ? "#FFC107" : "#D1D5DB"}
-                  className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}
+                  fill={product.rating && product.rating > 0 && i < Math.floor(product.rating) ? "#FFC107" : "none"}
+                  stroke={product.rating && product.rating > 0 && i < Math.floor(product.rating) ? "#FFC107" : "#D1D5DB"}
+                  className={product.rating && product.rating > 0 && i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}
                 />
               ))}
             </div>
-            <span className="text-xs text-gray-500 ml-1">({product.reviewCount})</span>
+            {product.rating && product.rating > 0 && product.reviewCount > 0 && (
+              <span className="text-xs text-gray-500 ml-1">({product.reviewCount})</span>
+            )}
           </div>
           <div className="flex items-center">
             <span className="text-lg font-bold text-red-500">

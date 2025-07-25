@@ -15,8 +15,8 @@ router.post('/user/remove', authenticate, wishlistController.removeWishlistItem)
 router.get('/', authenticate, isAdmin, async (req, res) => {
   // List all wishlists (admin only)
   const { Wishlist } = await import('../models/Wishlist');
-  const wishlists = await Wishlist.find();
-  res.json(wishlists);
+  const wishlist = await Wishlist.find();
+  res.json(wishlist);
 });
 
 export default router; 

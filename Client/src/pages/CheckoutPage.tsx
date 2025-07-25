@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { fetchProducts } from '@/store/productSlice';
 import { clearCartBackend, clearCart } from '@/store/cartSlice';
+import { useDispatch } from 'react-redux';
 
 const formSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -37,6 +38,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const CheckoutPage: React.FC = () => {
+  const dispatch = useDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { cartItems, user, token } = useShoppingContext();
@@ -167,7 +169,7 @@ const CheckoutPage: React.FC = () => {
           name: values.firstName + ' ' + values.lastName,
           street: values.address,
           city: values.city,
-          county: values.county,
+          state: values.county,
           zip: values.postalCode,
           country: values.country,
         },
@@ -194,6 +196,15 @@ const CheckoutPage: React.FC = () => {
       if (!paymentRes.ok || !paymentData.url) {
         throw new Error(paymentData.error || 'Failed to create Stripe session');
       }
+      // Save order to backend
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderPayload),
+      });
       // 2. Clear cart in backend and Redux only after order is successful
       await dispatch(clearCartBackend() as any);
       dispatch(clearCart());

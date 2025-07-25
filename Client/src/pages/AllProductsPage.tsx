@@ -97,7 +97,7 @@ const AllProductsPage = () => {
 
   const getId = (p: any) => (p.id ? p.id.toString() : p._id ? p._id.toString() : '');
   const handleAddToCart = (product: any) => {
-    const productId = getId(product);
+    const productId = product._id || product.id;
     dispatch(addToCart({ ...product, id: productId, quantity: 1 }));
     toast({
       title: 'Added to Cart',
@@ -105,7 +105,15 @@ const AllProductsPage = () => {
     });
   };
   const handleAddToWishlist = (product: any) => {
-    dispatch(addToWishlist(product));
+    const wishlistItem = {
+      productId: product._id || product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      inStock: product.inventory > 0,
+      id: product._id || product.id,
+    };
+    dispatch(addToWishlist(wishlistItem));
     toast({
       title: 'Added to Wishlist',
       description: `${product.name} has been added to your wishlist.`

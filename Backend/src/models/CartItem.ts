@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface CartItemDocument extends Document {
-  userId: mongoose.Types.ObjectId;
+export interface CartProduct {
   productId: string;
   name: string;
   price: number;
@@ -9,13 +8,22 @@ export interface CartItemDocument extends Document {
   quantity: number;
 }
 
-const CartItemSchema = new Schema<CartItemDocument>({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+export interface CartDocument extends Document {
+  userId: mongoose.Types.ObjectId;
+  items: CartProduct[];
+}
+
+const CartProductSchema = new Schema<CartProduct>({
   productId: { type: String, required: true },
   name: { type: String, required: true },
   price: { type: Number, required: true },
   image: { type: String, required: true },
   quantity: { type: Number, required: true },
+}, { _id: false });
+
+const CartSchema = new Schema<CartDocument>({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  items: { type: [CartProductSchema], default: [] },
 });
 
-export const CartItem = mongoose.model<CartItemDocument>('CartItem', CartItemSchema); 
+export const Cart = mongoose.model<CartDocument>('Cart', CartSchema); 

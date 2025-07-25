@@ -73,23 +73,23 @@ const BestSellersPage = () => {
   const dispatch = useDispatch();
 
   const handleAddToCart = (product: any) => {
-    dispatch(addToCart({ ...product, quantity: 1 }));
+    const productId = product._id || product.id;
+    dispatch(addToCart({ ...product, id: productId, quantity: 1 }));
     toast({
       title: 'Added to Cart',
       description: `${product.name} has been added to your cart.`
     });
   };
   const handleAddToWishlist = (product: any) => {
-    const exists = (Array.isArray(wishlist) ? wishlist : []).find((item: any) => item.id === product.id);
-    if (exists) {
-      toast({
-        title: 'Already in Wishlist',
-        description: `${product.name} is already in your wishlist.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    dispatch(addToWishlist(product));
+    const wishlistItem = {
+      productId: product._id || product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      inStock: product.inventory > 0,
+      id: product._id || product.id,
+    };
+    dispatch(addToWishlist(wishlistItem));
     toast({
       title: 'Added to Wishlist',
       description: `${product.name} has been added to your wishlist.`

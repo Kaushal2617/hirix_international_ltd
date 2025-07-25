@@ -43,16 +43,7 @@ const SignInPage = () => {
     try {
       const resultAction = await dispatch(login({ email: values.email, password: values.password }) as any);
       if (login.fulfilled.match(resultAction)) {
-        // Fetch cart and wishlist from backend after login
-        const userId = resultAction.payload.user.id || resultAction.payload.user._id;
-        const cartRes = await fetch(`/api/cart-items/user?userId=${userId}`, { credentials: 'include' });
-        const cartItems = await cartRes.json();
-        dispatch(setCart(Array.isArray(cartItems) ? cartItems : []));
-
-        const wishlistRes = await fetch(`/api/wishlist-items/user?userId=${userId}`, { credentials: 'include' });
-        const wishlistItems = await wishlistRes.json();
-        dispatch(setWishlist(Array.isArray(wishlistItems) ? wishlistItems : []));
-
+        // After login, global effect will fetch cart and wishlist
         navigate('/');
       }
     } catch (err) {

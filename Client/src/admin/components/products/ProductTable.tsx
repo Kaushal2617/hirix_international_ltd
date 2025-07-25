@@ -71,7 +71,7 @@ const normalizeProductId = (product: AdminProduct) => ({
   id: product.id || (product as any)?._id,
 });
 
-const getProductId = (product: AdminProduct) => product.id;
+const getProductId = (product: AdminProduct) => product._id || product.id;
 
 export const ProductTable = ({ 
   products, 

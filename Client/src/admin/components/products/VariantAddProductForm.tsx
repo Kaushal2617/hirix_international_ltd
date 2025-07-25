@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { VariantManager } from "./VariantManager"
 import { Palette, Package2, Sparkles } from "lucide-react"
+import { useSelector } from "react-redux"
 
 interface ProductVariant {
   id: string
@@ -62,6 +63,7 @@ export interface VariantProduct {
   brand: string
   productModel: string // Renamed from model
   category: string
+  subcategory: string
   price: number
   oldPrice?: number
   material: string
@@ -85,6 +87,7 @@ export interface VariantProduct {
   availableColors?: string[]
   availableMaterials?: string[]
   availableFinishes?: string[]
+  slug: string
 }
 
 export const VariantAddProductForm = ({
@@ -107,6 +110,7 @@ export const VariantAddProductForm = ({
     brand: "",
     model: "",
     category: "",
+    subcategory: "",
     description: "",
     newArrival: false,
     bestSeller: false,
@@ -118,23 +122,57 @@ export const VariantAddProductForm = ({
   const [aPlusImage, setAPlusImage] = useState<string>("")
   const [detailsInput, setDetailsInput] = useState<string>("")
 
+  // Fetch categories and subcategories from Redux or API
+  const categoriesList = useSelector((state: any) => state.categories.categories);
+  const selectedCategory = categoriesList.find((cat: any) => cat.name === newProduct.category);
+  const subcategories = selectedCategory?.subcategories || [];
+
+  useEffect(() => {
+    // Fetch materials
+    fetch('http://localhost:5000/api/materials')
+      .then(res => res.json())
+      .then(data => setMaterials(data.map((m: any) => m.name)))
+      .catch(() => {});
+    // Fetch colors
+    fetch('http://localhost:5000/api/colors')
+      .then(res => res.json())
+      .then(data => setColors(data.map((c: any) => c.name)))
+      .catch(() => {});
+  }, []);
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setNewProduct({ ...newProduct, [field]: value })
   }
 
-  const handleCreateMaterial = (value: string) => {
-    const newMaterial = value.trim()
-    if (newMaterial && !materials.find((m) => m.toLowerCase() === newMaterial.toLowerCase())) {
-      setMaterials((prev) => [...prev, newMaterial])
-    }
-  }
+  const handleCreateMaterial = async (value: string) => {
+    const newMaterial = value.trim();
+    if (!newMaterial || materials.find((m) => m.toLowerCase() === newMaterial.toLowerCase())) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newMaterial })
+      });
+      if (res.ok) {
+        setMaterials((prev) => [...prev, newMaterial]);
+      }
+    } catch {}
+  };
 
-  const handleCreateColor = (value: string) => {
-    const newColor = value.trim()
-    if (newColor && !colors.find((c) => c.toLowerCase() === newColor.toLowerCase())) {
-      setColors((prev) => [...prev, newColor])
-    }
-  }
+  const handleCreateColor = async (value: string) => {
+    const newColor = value.trim();
+    if (!newColor || colors.find((c) => c.toLowerCase() === newColor.toLowerCase())) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/colors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newColor })
+      });
+      if (res.ok) {
+        setColors((prev) => [...prev, newColor]);
+      }
+    } catch {}
+  };
 
   const handleCreateSize = (value: string) => {
     const newSize = value.trim()
@@ -290,6 +328,15 @@ export const VariantAddProductForm = ({
       return
     }
 
+    if (!newProduct.subcategory) {
+      toast({
+        title: "Missing Subcategory",
+        description: "Please select a subcategory",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate that we have at least one variant
     if (variants.length === 0) {
       toast({
@@ -317,6 +364,7 @@ export const VariantAddProductForm = ({
       brand: newProduct.brand,
       productModel: newProduct.model, // Map model to productModel
       category: newProduct.category,
+      subcategory: newProduct.subcategory,
       price: defaultVariant.price,
       oldPrice: defaultVariant.oldPrice,
       material: defaultVariant.material || "",
@@ -329,8 +377,6 @@ export const VariantAddProductForm = ({
         .split("\n")
         .map((d) => d.trim())
         .filter((d) => d),
-      rating: 4.0,
-      reviewCount: 0,
       newArrival: newProduct.newArrival || false,
       bestSeller: newProduct.bestSeller || false,
       inventory: variants.reduce((sum, v) => sum + v.inventory, 0),
@@ -347,6 +393,10 @@ export const VariantAddProductForm = ({
       availableSizes: availableSizes.length > 0 ? availableSizes : undefined,
       availableMaterials: availableMaterials.length > 0 ? availableMaterials : undefined,
       availableFinishes: availableFinishes.length > 0 ? availableFinishes : undefined,
+      slug: newProduct.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, ''),
     }
 
     // Add product and reset form
@@ -369,6 +419,7 @@ export const VariantAddProductForm = ({
       brand: "",
       model: "",
       category: "",
+      subcategory: "",
       description: "",
       newArrival: false,
       bestSeller: false,
@@ -483,6 +534,20 @@ export const VariantAddProductForm = ({
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="productSubcategory">Subcategory *</Label>
+                    <Select value={newProduct.subcategory} onValueChange={(value) => handleInputChange("subcategory", value)} disabled={!newProduct.category}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={newProduct.category ? "Select subcategory" : "Select category first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subcategories.map((sub: any) => (
+                          <SelectItem key={sub.name} value={sub.name}>{sub.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>Product Type</Label>
                     <div className="flex flex-wrap gap-4">
                       <div className="flex items-center space-x-2">
@@ -570,7 +635,12 @@ export const VariantAddProductForm = ({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="font-semibold">A+ Content Image (optional)</Label>
-                    <input type="file" accept="image/*" onChange={handleAPlusImageUpload} className="block" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAPlusImageUpload}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                    />
                     {aPlusImage && (
                       <div className="relative w-full h-40 mt-2 rounded-lg overflow-hidden border border-gray-200">
                         <img
@@ -649,6 +719,9 @@ export const VariantAddProductForm = ({
                   </div>
                   <div>
                     <strong>Category:</strong> {newProduct.category || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Subcategory:</strong> {newProduct.subcategory || "N/A"}
                   </div>
                   <div>
                     <strong>Type:</strong>

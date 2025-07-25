@@ -1,5 +1,8 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { addItem, removeItem, updateItem, clearCart } from '../store/cartSlice';
 
 // Define types for our context
 export interface CartItem {
@@ -18,59 +21,22 @@ interface ShoppingContextType {
   removeFromCart: (id: number) => void;
   updateCartItemQuantity: (id: number, quantity: number) => void;
   clearCart: () => void;
+  user: any; // added
+  token: string | null; // added
 }
 
 const ShoppingContext = createContext<ShoppingContextType | undefined>(undefined);
 
 export const ShoppingProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const user = useSelector((state: RootState) => state.auth.user);
+  const token = useSelector((state: RootState) => state.auth.token);
   const [discount, setDiscount] = useState<number>(0);
 
   const applyDiscount = (amount: number) => {
     setDiscount(amount);
-  };
-
-  const addToCart = (product: any) => {
-    setCartItems(prevItems => {
-      // Check if product already exists in cart
-      const existingItem = prevItems.find(item => item.id === product.id);
-      if (existingItem) {
-        // If it exists, increase quantity
-        return prevItems.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        // If not, add new item with quantity 1
-        return [...prevItems, { ...product, quantity: 1 }];
-      }
-    });
-    toast({
-      title: "Added to Cart",
-      description: `${product.name} has been added to your cart.`
-    });
-  };
-
-  const removeFromCart = (id: number) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
-
-  const updateCartItemQuantity = (id: number, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(id);
-      return;
-    }
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
   };
 
   return (
@@ -78,10 +44,28 @@ export const ShoppingProvider = ({ children }: { children: ReactNode }) => {
       cartItems,
       discount,
       applyDiscount,
-      addToCart,
-      removeFromCart,
-      updateCartItemQuantity,
-      clearCart
+      addToCart: (product: any) => {
+        dispatch(addItem({ ...product, quantity: 1 }));
+        toast({
+          title: "Added to Cart",
+          description: `${product.name} has been added to your cart.`
+        });
+      },
+      removeFromCart: (id: string) => {
+        dispatch(removeItem(id));
+      },
+      updateCartItemQuantity: (id: string, quantity: number) => {
+        if (quantity <= 0) {
+          dispatch(removeItem(id));
+        } else {
+          dispatch(updateItem({ id, quantity }));
+        }
+      },
+      clearCart: () => {
+        dispatch(clearCart());
+      },
+      user,
+      token
     }}>
       {children}
     </ShoppingContext.Provider>

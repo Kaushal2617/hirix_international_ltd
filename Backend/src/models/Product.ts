@@ -45,6 +45,7 @@ export interface ProductDocument extends Document {
   rating: number;
   reviewCount: number;
   category: string;
+  subcategory: string;
   color: string;
   material: string;
   brand?: string;
@@ -79,6 +80,7 @@ const ProductSchema = new Schema<ProductDocument>(
     rating: { type: Number, required: true },
     reviewCount: { type: Number, required: true },
     category: { type: String, required: true },
+    subcategory: { type: String, required: true },
     color: { type: String, required: true },
     material: { type: String, required: true },
     brand: { type: String },

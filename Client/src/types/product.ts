@@ -15,6 +15,7 @@ export interface ColorVariant {
     price: number
     oldPrice?: number
     category: string
+    subcategory: string
     rating: number
     reviewCount: number
     inventory: number

@@ -6,7 +6,7 @@ import { Trash2, Heart, ShoppingCart, ShoppingBag, X } from "lucide-react"
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { addItem as addToCart } from '@/store/cartSlice';
-import { addItem, removeItem, clearWishlist, setWishlist, saveWishlist } from '@/store/wishlistSlice';
+import { addItem, removeItem, clearWishlist, setWishlist, saveWishlist, clearWishlistBackend } from '@/store/wishlistSlice';
 import store from '@/store';
 import type { AppDispatch } from '@/store';
 import Footer from "../components/shared/Footer"
@@ -14,15 +14,32 @@ import Footer from "../components/shared/Footer"
 const WishlistPage = () => {
   const dispatch = useDispatch();
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const products = useSelector((state: RootState) => state.products.products);
+
+  // Merge latest product data into wishlist items
+  const mergedWishlistItems = wishlistItems.map(item => {
+    const product = products.find(
+      p => p._id === item.productId || p.id === item.productId || p._id === item.id || p.id === item.id
+    );
+    return {
+      ...item,
+      // Use latest product info if available
+      name: product?.name || item.name,
+      price: product?.price ?? item.price,
+      image: product?.image || item.image,
+      inStock: product ? product.inventory > 0 : false,
+      productId: item.productId || item.id,
+    };
+  });
   // For add to cart, use Redux cart
   const moveAllToCart = () => {
-    const inStockItems = wishlistItems.filter((item) => item.inStock);
+    const inStockItems = mergedWishlistItems.filter((item) => item.inStock);
     if (inStockItems.length > 0) {
       inStockItems.forEach((item) => dispatch(addToCart({ ...item, quantity: 1 })));
     }
   };
 
-  if (wishlistItems.length === 0) {
+  if (mergedWishlistItems.length === 0) {
     return (
       <div className="flex flex-col min-h-screen">
         <div className="flex-1">
@@ -46,7 +63,7 @@ const WishlistPage = () => {
   const WishlistItemsList = () => (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 space-y-4">
-        {wishlistItems.map((item) => (
+        {mergedWishlistItems.map((item) => (
           <div key={item.id} className="relative group border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
             {/* Remove Button */}
             <button
@@ -152,7 +169,10 @@ const WishlistPage = () => {
         <Button
           variant="outline"
           className="flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 bg-transparent w-full sm:w-auto"
-          onClick={() => dispatch(clearWishlist())}
+          onClick={async () => {
+            await dispatch(clearWishlistBackend() as any);
+            dispatch(clearWishlist());
+          }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
           Clear Wishlist
@@ -174,27 +194,27 @@ const WishlistPage = () => {
         <div className="space-y-4">
           <div className="flex justify-between font-medium">
             <span>Total Items</span>
-            <span>{wishlistItems.length}</span>
+            <span>{mergedWishlistItems.length}</span>
           </div>
           <div className="flex justify-between font-medium">
             <span>In Stock Items</span>
-            <span>{wishlistItems.filter((item) => item.inStock).length}</span>
+            <span>{mergedWishlistItems.filter((item) => item.inStock).length}</span>
           </div>
           <div className="flex justify-between font-medium">
             <span>Out of Stock</span>
-            <span>{wishlistItems.filter((item) => !item.inStock).length}</span>
+            <span>{mergedWishlistItems.filter((item) => !item.inStock).length}</span>
           </div>
           <div className="border-t pt-4">
             <div className="flex justify-between font-semibold text-lg">
               <span>Total Value</span>
-              <span>£{wishlistItems.reduce((sum, item) => sum + item.price, 0).toFixed(2)}</span>
+              <span>£{mergedWishlistItems.reduce((sum, item) => sum + item.price, 0).toFixed(2)}</span>
             </div>
           </div>
           <Button
             className="w-full mt-4"
             size="lg"
             onClick={moveAllToCart}
-            disabled={!wishlistItems.some((item) => item.inStock)}
+            disabled={!mergedWishlistItems.some((item) => item.inStock)}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             Move All to Cart
@@ -215,7 +235,7 @@ const WishlistPage = () => {
               My Wishlist
             </h1>
             <p className="text-sm sm:text-base text-gray-600 mt-2">
-              {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"} in your wishlist
+              {mergedWishlistItems.length} {mergedWishlistItems.length === 1 ? "item" : "items"} in your wishlist
             </p>
           </div>
 
@@ -248,11 +268,11 @@ const WishlistPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {wishlistItems.filter((item) => item.inStock).length} items available
+                  {mergedWishlistItems.filter((item) => item.inStock).length} items available
                 </p>
                 <p className="text-lg font-bold">
                   £
-                  {wishlistItems
+                  {mergedWishlistItems
                     .filter((item) => item.inStock)
                     .reduce((sum, item) => sum + item.price, 0)
                     .toFixed(2)}
@@ -261,7 +281,7 @@ const WishlistPage = () => {
               <button
                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={moveAllToCart}
-                disabled={!wishlistItems.some((item) => item.inStock)}
+                disabled={!mergedWishlistItems.some((item) => item.inStock)}
               >
                 Move to Cart
               </button>

@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import { CreatableCombobox } from "@/components/ui/creatable-combobox"
 import { Package, Zap } from "lucide-react"
 import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css"
+import { useSelector } from "react-redux"
 
 interface SimpleAddProductFormProps {
   open: boolean
@@ -35,6 +36,7 @@ export interface SimpleProduct {
   brand: string
   productModel: string // Renamed from model
   category: string
+  subcategory: string
   price: number
   oldPrice?: number
   material: string
@@ -53,13 +55,14 @@ export interface SimpleProduct {
   weight: number
   dimensions: { length: number; width: number; height: number }
   aPlusImage?: string
+  slug: string
 }
 
 export const SimpleAddProductForm = ({
   open,
   onOpenChange,
   onAddProduct,
-  categories,
+  categories: initialCategories,
   materials: initialMaterials,
   colors: initialColors,
 }: SimpleAddProductFormProps) => {
@@ -72,6 +75,7 @@ export const SimpleAddProductForm = ({
     brand: "",
     model: "",
     category: "",
+    subcategory: '',
     price: 0,
     oldPrice: 0,
     material: "",
@@ -93,23 +97,52 @@ export const SimpleAddProductForm = ({
   const [aPlusImage, setAPlusImage] = useState<string>("")
   const [detailsInput, setDetailsInput] = useState<string>("")
 
+  useEffect(() => {
+    // Fetch materials
+    fetch('http://localhost:5000/api/materials')
+      .then(res => res.json())
+      .then(data => setMaterials(data.map((m: any) => m.name)))
+      .catch(() => {});
+    // Fetch colors
+    fetch('http://localhost:5000/api/colors')
+      .then(res => res.json())
+      .then(data => setColors(data.map((c: any) => c.name)))
+      .catch(() => {});
+  }, []);
+
   const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData({ ...formData, [field]: value })
   }
 
-  const handleCreateMaterial = (value: string) => {
-    const newMaterial = value.trim()
-    if (newMaterial && !materials.find((m) => m.toLowerCase() === newMaterial.toLowerCase())) {
-      setMaterials((prev) => [...prev, newMaterial])
-    }
-  }
+  const handleCreateMaterial = async (value: string) => {
+    const newMaterial = value.trim();
+    if (!newMaterial || materials.find((m) => m.toLowerCase() === newMaterial.toLowerCase())) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newMaterial })
+      });
+      if (res.ok) {
+        setMaterials((prev) => [...prev, newMaterial]);
+      }
+    } catch {}
+  };
 
-  const handleCreateColor = (value: string) => {
-    const newColor = value.trim()
-    if (newColor && !colors.find((c) => c.toLowerCase() === newColor.toLowerCase())) {
-      setColors((prev) => [...prev, newColor])
-    }
-  }
+  const handleCreateColor = async (value: string) => {
+    const newColor = value.trim();
+    if (!newColor || colors.find((c) => c.toLowerCase() === newColor.toLowerCase())) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/colors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newColor })
+      });
+      if (res.ok) {
+        setColors((prev) => [...prev, newColor]);
+      }
+    } catch {}
+  };
 
   const generateSKU = () => {
     if (formData.name && formData.category && formData.color) {
@@ -125,6 +158,11 @@ export const SimpleAddProductForm = ({
   // Derive main and additional image previews
   const mainImage = formData.image || '';
   const additionalImages = (additionalImagePreviews || []).filter(img => img && img !== mainImage);
+
+  // Fetch categories and subcategories from Redux or API
+  const categories = useSelector((state: any) => state.categories.categories);
+  const selectedCategory = categories.find((cat: any) => cat.name === formData.category);
+  const subcategories = selectedCategory?.subcategories || [];
 
   const handleSubmit = () => {
     // Validation
@@ -144,6 +182,14 @@ export const SimpleAddProductForm = ({
       });
       return;
     }
+    if (!formData.subcategory) {
+      toast({
+        title: "Missing Subcategory",
+        description: "Please select a subcategory",
+        variant: "destructive",
+      });
+      return;
+    }
     // Only use images array for additional images; image field is for main image
     const filteredAdditionalImages = additionalImages.filter(img => img && img !== formData.image);
     const product: SimpleProduct = {
@@ -153,6 +199,7 @@ export const SimpleAddProductForm = ({
       brand: formData.brand,
       productModel: formData.model, // Map model to productModel
       category: formData.category,
+      subcategory: formData.subcategory,
       price: formData.price,
       oldPrice: formData.oldPrice || undefined,
       material: formData.material,
@@ -176,8 +223,10 @@ export const SimpleAddProductForm = ({
       bestSeller: formData.bestSeller,
       sale: formData.sale,
       aPlusImage: aPlusImage || undefined, // Ensure aPlusImage is included
-      rating: 4.0,
-      reviewCount: 0,
+      slug: formData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, ''),
     };
     onAddProduct(product);
     resetForm();
@@ -195,6 +244,7 @@ export const SimpleAddProductForm = ({
       brand: "",
       model: "",
       category: "",
+      subcategory: '',
       price: 0,
       oldPrice: 0,
       material: "",
@@ -215,6 +265,29 @@ export const SimpleAddProductForm = ({
     setAPlusImage("")
     setDetailsInput("")
   }
+
+  // A+ Content Image upload handler
+  const handleAPlusImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/products/upload-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Image upload failed');
+      const data = await response.json();
+      setAPlusImage(data.url);
+    } catch (err) {
+      toast({ title: 'A+ Image Upload Error', description: (err as Error).message, variant: 'destructive' });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -298,10 +371,24 @@ export const SimpleAddProductForm = ({
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((category) => (
+                      {initialCategories.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
                         </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="subcategory">Subcategory *</Label>
+                  <Select value={formData.subcategory} onValueChange={(value) => handleInputChange("subcategory", value)} disabled={!formData.category}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.category ? "Select subcategory" : "Select category first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subcategories.map((sub: any) => (
+                        <SelectItem key={sub.name} value={sub.name}>{sub.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -529,13 +616,7 @@ export const SimpleAddProductForm = ({
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const url = URL.createObjectURL(file)
-                    setAPlusImage(url)
-                  }
-                }}
+                onChange={handleAPlusImageUpload}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
               />
               {aPlusImage && (

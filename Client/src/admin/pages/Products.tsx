@@ -17,6 +17,7 @@ interface UnifiedProduct {
   sku: string
   name: string
   category: string
+  subcategory: string
   price: number
   oldPrice?: number
   material: string
