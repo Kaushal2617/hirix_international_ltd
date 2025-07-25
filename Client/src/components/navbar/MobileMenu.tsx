@@ -81,7 +81,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ categories = [] }) => {
                   window.location.reload();
                 }}
               >
-                Logout
+                Sign Out
               </button>
             )}
           </div>

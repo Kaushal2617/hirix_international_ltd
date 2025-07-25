@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const Logo = () => {
   return (
     <Link to="/" className="flex items-center w-40">
-      <span className="self-center text-xl font-semibold whitespace-nowrap"><img src='/src/Assets/logo2.jpg'/></span>
+      <span className="self-center text-xl font-semibold whitespace-nowrap"><img src='/logo2.jpg'/></span>
     </Link>
   );
 };

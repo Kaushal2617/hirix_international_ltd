@@ -7,32 +7,32 @@ import { motion, AnimatePresence, easeInOut } from "framer-motion"
 import { Link } from "react-router-dom"
 import { Sparkles } from "lucide-react"
 
-const fallbackShowcaseCategories = [
-  {
-    id: 1,
-    title: "Showcase 1",
-    image: "/images/minibanner1_resized.jpg",
-    link: "/sale",
-  },
-  {
-    id: 2,
-    title: "Showcase 2",
-    image: "https://hirixdirect.co.uk/uploads/products/68497fff89d09_2000552802.jpg",
-    link: "/sale",
-  },
-  {
-    id: 3,
-    title: "Showcase 3",
-    image: "https://hirixdirect.co.uk/uploads/products/6838835888137_1305586369.jpg",
-    link: "/sale",
-  },
-  {
-    id: 4,
-    title: "Showcase 4",
-    image: "https://hirixdirect.co.uk/uploads/products/679c996c889db_1155877497.jpg",
-    link: "/sale",
-  },
-];
+// const fallbackShowcaseCategories = [
+//   {
+//     id: 1,
+//     title: "Showcase 1",
+//     image: "/images/minibanner1_resized.jpg",
+//     link: "/sale",
+//   },
+//   {
+//     id: 2,
+//     title: "Showcase 2",
+//     image: "https://hirixdirect.co.uk/uploads/products/68497fff89d09_2000552802.jpg",
+//     link: "/sale",
+//   },
+//   {
+//     id: 3,
+//     title: "Showcase 3",
+//     image: "https://hirixdirect.co.uk/uploads/products/6838835888137_1305586369.jpg",
+//     link: "/sale",
+//   },
+//   {
+//     id: 4,
+//     title: "Showcase 4",
+//     image: "https://hirixdirect.co.uk/uploads/products/679c996c889db_1155877497.jpg",
+//     link: "/sale",
+//   },
+// ];
 
 const transitionDuration = 0.8
 const displayDuration = 3
@@ -47,7 +47,7 @@ const AnimatedProductShowcase = () => {
       image: b.imageUrl,
       link: b.link || '/',
     }));
-  const categoriesToShow = showcaseCategories.length > 0 ? showcaseCategories : fallbackShowcaseCategories;
+  const categoriesToShow = showcaseCategories.length > 0 ? showcaseCategories : [];
   console.log('AnimatedProductShowcase categoriesToShow:', categoriesToShow);
   const [leftIdx, setLeftIdx] = useState(0)
   const [rightIdx, setRightIdx] = useState(1)

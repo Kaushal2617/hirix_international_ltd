@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Tag, Star, Sofa, TreePine, LampDesk, Monitor, Dumbbell, Zap, Home, ShoppingBag } from 'lucide-react';
+import { Tag, Star, Sofa, TreePine, LampDesk, Monitor, Dumbbell, Zap, Home, ShoppingBag, Flower, Boxes, Gamepad2, Activity } from 'lucide-react';
 
 type Category = {
   name: string;
@@ -24,7 +24,15 @@ const categoryIcons: Record<string, React.ReactNode> = {
   Sale: <Tag className="w-5 h-5 mr-1 text-red-500 animate-bounce" />,
   'New Arrivals': <Star className="w-5 h-5 mr-1 text-yellow-400 animate-bounce" />,
   'Best Sellers': <Star className="w-5 h-5 mr-1 text-orange-400 animate-bounce" />,
+
+  // New categories
+  'Home & Living': <Home className="w-5 h-5 mr-1 text-pink-500 animate-bounce" />,
+  'Garden & Outdoor': <Flower className="w-5 h-5 mr-1 text-lime-600 animate-bounce" />,
+  Storage: <Boxes className="w-5 h-5 mr-1 text-slate-500 animate-bounce" />,
+  'Toys and Games': <Gamepad2 className="w-5 h-5 mr-1 text-fuchsia-500 animate-bounce" />,
+  'Gym & Sports': <Activity className="w-5 h-5 mr-1 text-red-600 animate-bounce" />,
 };
+
 const defaultIcon = <ShoppingBag className="w-5 h-5 mr-1 text-gray-400 animate-bounce" />;
 
 const CategoryMenu: React.FC<CategoryMenuProps> = ({ categories = [], rightCategories = [] }) => {

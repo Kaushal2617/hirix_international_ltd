@@ -198,7 +198,7 @@ const Navbar = ({ categories = [] }) => {
                       window.location.href = '/';
                     }}
                   >
-                    <span className="tracking-wide">Logout</span>
+                    <span className="tracking-wide">Sign Out</span>
                   </button>
                 )}
                 {/* Optional: Add a soft footer or brand mark here */}

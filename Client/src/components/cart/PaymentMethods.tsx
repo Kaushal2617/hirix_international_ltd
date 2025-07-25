@@ -12,10 +12,13 @@ const PaymentMethods: React.FC = () => {
           <img src="https://cdn-icons-png.flaticon.com/512/196/196561.png" alt="Mastercard" className="h-6" />
         </div>
         <div className="bg-white p-1 rounded border border-gray-200">
-          <img src="https://cdn-icons-png.flaticon.com/512/196/196565.png" alt="PayPal" className="h-6" />
+          <img src="https://res.cloudinary.com/dqvsdncsk/image/upload/v1753434015/american-express_uujnh1.png" alt="American Express" className="h-6" />
         </div>
         <div className="bg-white p-1 rounded border border-gray-200">
-          <img src="https://cdn-icons-png.flaticon.com/512/5977/5977576.png" alt="Apple Pay" className="h-6" />
+          <img src="https://res.cloudinary.com/dqvsdncsk/image/upload/v1753434154/discover_bgs987.png" alt="Discover" className="h-6" />
+        </div>
+        <div className="bg-white p-1 rounded border border-gray-200">
+          <img src="https://res.cloudinary.com/dqvsdncsk/image/upload/v1753434293/jcb_vuleqc.png" alt="JCB" className="h-6" />
         </div>
       </div>
     </div>

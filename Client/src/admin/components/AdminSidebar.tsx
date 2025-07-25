@@ -92,7 +92,7 @@ const AdminSidebar = () => {
           className="flex items-center w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-100/80 transition-all font-medium"
         >
           <LogOut className="w-5 h-5 mr-3 text-red-500" />
-          <span>Logout</span>
+          <span>Sign out</span>
         </button>
       </div>
     </motion.aside>
